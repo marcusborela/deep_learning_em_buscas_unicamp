@@ -3635,4 +3635,4140 @@ Esses arquivos são subconjuntos menores dos arquivos `queries.dev.tsv` e `queri
 
 ***
 
-Exported on 4 de março de 2023 0:13 PM.
+**Human:**
+Como faço para ler um arquivo topics-and-qrels/topics.msmarco-passage.dev-subset.txt com duas informações por linha: id_query e text_query, separados por tab
+
+***
+
+**Assistant:**
+
+Você pode ler um arquivo de texto com duas informações por linha separadas por tab usando a biblioteca nativa do Python chamada `csv`.
+
+Para ler o arquivo "topics-and-qrels/topics.msmarco-passage.dev-subset.txt" com o formato descrito, você pode usar o seguinte código:
+
+```
+import csv
+
+with open('topics-and-qrels/topics.msmarco-passage.dev-subset.txt', 'r') as f:
+    reader = csv.reader(f, delimiter='\t')
+    for row in reader:
+        id_query, text_query = row
+        print(f"id_query: {id_query}, text_query: {text_query}")
+
+```
+
+Este código abre o arquivo "topics-and-qrels/topics.msmarco-passage.dev-subset.txt" em modo de leitura (`'r'`), e em seguida usa a função `csv.reader()` para ler o conteúdo do arquivo como uma lista de linhas, separadas pelo caractere de tabulação (`'\t'`).
+
+Em seguida, o código faz um loop pelas linhas do arquivo lido e atribui a variável `id_query` o primeiro elemento da lista (id_query) e à variável `text_query` o segundo elemento da lista (text_query). Para fins de teste, o código imprime essas duas variáveis para cada linha lida do arquivo.
+
+
+***
+
+**Human:**
+Favor colocar esses dados lidos em um dicionário de nome query_dict, sendo id as chaves e o text os values.
+
+***
+
+**Assistant:**
+
+Claro! Segue o código:
+
+```
+query_dict = {}
+
+with open('topics-and-qrels/topics.msmarco-passage.dev-subset.txt', 'r') as f:
+    for line in f:
+        query_id, query_text = line.strip().split('\t')
+        query_dict[query_id] = query_text
+
+```
+
+Dessa forma, `query_dict` será um dicionário com as queries, em que cada chave é o ID da query e o valor é o seu texto correspondente.
+
+
+***
+
+**Human:**
+No código a seguir:
+code: !head {path_data}/qrels.dev.small.trec
+output:
+300674 0 7067032 1
+125705 0 7067056 1
+94798 0 7067181 1
+
+o que representa cada coluna?
+
+***
+
+**Assistant:**
+
+Cada linha do arquivo representa um julgamento de relevância (relevance judgement) de uma passagem de texto (passage) para uma determinada consulta (query). As colunas representam:
+
+- Coluna 1: ID da consulta (query id)
+- Coluna 2: Sempre 0, ignorar
+- Coluna 3: ID da passagem (passage id)
+- Coluna 4: Nível de relevância atribuído à passagem em relação à consulta. O valor 1 indica que a passagem é relevante para a consulta, enquanto o valor 0 indica que é irrelevante.
+
+
+
+***
+
+**Human:**
+Considere a função abaixo:
+
+def ler_arquivo_query_trec20(file_path:str):
+  query_dict = {}
+
+  with open(file_path, 'r') as f:
+      for line in f:
+          query_id, query_text = line.strip().split('\t')
+          query_dict[query_id] = query_text
+  return query_dict
+  
+
+Faça uma semelhante para ler qrels.dev.small.trec e retornar um qrels_dict.
+
+Não se esqueça de comentar a função e as linhas de código.
+
+***
+
+**Assistant:**
+
+Claro, segue a função para ler o arquivo qrels.dev.small.trec:
+
+```
+def ler_arquivo_qrels_trec20(file_path: str) -> dict:
+  '''
+  Lê o arquivo qrels.dev.small.trec e armazena as informações em um dicionário.
+
+  Args:
+    file_path: Caminho completo para o arquivo qrels.dev.small.trec.
+
+  Returns:
+    Um dicionário onde cada chave é o id de uma query e o valor é uma lista de 
+    ids dos documentos relevantes para essa query.
+  '''
+  qrels_dict = {}
+
+  with open(file_path, 'r') as f:
+      for line in f:
+          query_id, _, doc_id, rel = line.strip().split()
+          if rel == '1':
+              if query_id not in qrels_dict:
+                  qrels_dict[query_id] = [doc_id]
+              else:
+                  qrels_dict[query_id].append(doc_id)
+
+  return qrels_dict
+
+```
+
+Explicando o funcionamento:
+
+A função `ler_arquivo_qrels_trec20` recebe como parâmetro o caminho completo para o arquivo `qrels.dev.small.trec`, que contém informações sobre as relevâncias de documentos para cada query.
+
+A função cria um dicionário vazio `qrels_dict`, que será preenchido com as informações lidas no arquivo.
+
+O arquivo é lido linha por linha usando um loop `for`. Cada linha contém quatro informações separadas por espaço: o id da query (`query_id`), o tipo de informação (`_`), o id do documento (`doc_id`) e a relevância do documento para a query (`rel`).
+
+Se a relevância do documento para a query for igual a 1, significa que o documento é relevante para a query. Então, a função verifica se a query já está presente no dicionário `qrels_dict`. Se não estiver, adiciona a query com o id do documento na lista de documentos relevantes. Caso contrário, apenas adiciona o id do documento na lista já existente.
+
+Ao final do loop, a função retorna o dicionário `qrels_dict` preenchido com as informações de relevância lidas no arquivo.
+
+
+***
+
+**Human:**
+Recriar a função ler_arquivo_query_trec20 com comentários
+
+***
+
+**Assistant:**
+
+Claro! Segue abaixo a função `ler_arquivo_query_trec20` com comentários explicando o que cada linha faz:
+
+```
+def ler_arquivo_query_trec20(file_path:str):
+    # Inicializa um dicionário vazio
+    query_dict = {}
+
+    # Abre o arquivo especificado por file_path em modo leitura (por padrão)
+    with open(file_path, 'r') as f:
+        # Itera sobre cada linha do arquivo
+        for line in f:
+            # Remove quaisquer espaços em branco do início e fim da linha e depois separa a linha em duas partes usando
+            # o separador de tabulação (\t)
+            query_id, query_text = line.strip().split('\t')
+            
+            # Adiciona a query_text no dicionário, usando o query_id como chave
+            query_dict[query_id] = query_text
+    
+    # Retorna o dicionário preenchido com as queries
+    return query_dict
+
+```
+
+Basicamente, a função lê um arquivo contendo IDs e textos de consultas TREC e preenche um dicionário onde as chaves são os IDs e os valores são os textos das consultas.
+
+
+***
+
+**Human:**
+faltou o docstring
+
+***
+
+**Assistant:**
+
+Desculpe-me pelo erro. Segue abaixo a função com o docstring:
+
+```
+def ler_arquivo_query_trec20(file_path:str):
+  """
+  Função para ler o arquivo de queries do dataset TREC-DL 2020 e armazenar em um dicionário.
+
+  Args:
+    file_path (str): caminho completo do arquivo a ser lido.
+
+  Returns:
+    query_dict (dict): dicionário onde as chaves são os ids das queries e os valores são os textos das queries correspondentes.
+
+  """
+  query_dict = {}
+
+  with open(file_path, 'r') as f:
+      for line in f:
+          query_id, query_text = line.strip().split('\t')
+          query_dict[query_id] = query_text
+  return query_dict
+
+```
+
+
+***
+
+**Human:**
+Quero com docstring e com comentário antes de cada linha de código
+
+***
+
+**Assistant:**
+
+Claro, segue abaixo a função `ler_arquivo_query_trec20` com um docstring e comentários explicativos para cada linha de código:
+
+```
+def ler_arquivo_query_trec20(file_path:str):
+  """
+  Função para ler um arquivo de queries TREC 2020 e retorná-las em um dicionário.
+
+  Args:
+    file_path (str): Caminho do arquivo de queries TREC 2020
+
+  Returns:
+    dict: Dicionário em que as chaves são os IDs das queries e os valores são os
+          textos das queries correspondentes.
+  """
+
+  # Cria um dicionário vazio para armazenar as queries
+  query_dict = {}
+
+  # Abre o arquivo em modo leitura
+  with open(file_path, 'r') as f:
+      
+      # Itera sobre as linhas do arquivo
+      for line in f:
+
+          # Separa a linha em duas partes (id e texto), considerando que são separadas por uma tabulação
+          query_id, query_text = line.strip().split('\t')
+
+          # Adiciona a query ao dicionário, usando o id como chave e o texto como valor
+          query_dict[query_id] = query_text
+
+  # Retorna o dicionário com as queries
+  return query_dict
+
+```
+
+
+***
+
+**Human:**
+Quero também a função ler_arquivo_qrels_trec20 com docstring e com comentário antes de cada linha de código
+
+***
+
+**Assistant:**
+
+Claro, aqui está a função `ler_arquivo_qrels_trec20` com comentários e docstring:
+
+```
+def ler_arquivo_qrels_trec20(file_path:str) -> dict:
+    """
+    Lê um arquivo TSV contendo a avaliação de relevância de documentos para cada consulta.
+    
+    Args:
+    file_path: str - O caminho do arquivo a ser lido.
+    
+    Returns:
+    dict - Um dicionário onde as chaves são os IDs das consultas e os valores são 
+           dicionários em que as chaves são os IDs dos documentos e os valores são 
+           os níveis de relevância (0, 1, 2, 3, ou 4) de cada documento para a consulta correspondente.
+    """
+    qrels_dict = {}
+
+    with open(file_path, 'r') as f:
+        # Itera sobre cada linha do arquivo
+        for line in f:
+            # Separa a linha em seus campos
+            query_id, _, doc_id, relevance = line.strip().split()
+            # Verifica se a consulta já existe no dicionário
+            if query_id not in qrels_dict:
+                qrels_dict[query_id] = {}
+            # Adiciona o ID do documento e seu nível de relevância
+            qrels_dict[query_id][doc_id] = int(relevance)
+    return qrels_dict
+
+```
+
+
+***
+
+**Human:**
+
+Favor gerar código para preprocessar texto de documentos.
+
+Em cada linha dos arquivos tem um json com id e contents, ambos char.
+
+Favor gerar um código para:
+
+ler todos os arquivos (json) do path {path_data}/collection_json
+e gerar um arquivo com mesmo nome, com sufixo "_prep", com o resultado da função analyze na chave contents 
+essa função gera uma lista de tokens já pré-processadas.
+
+***
+
+**Assistant:**
+
+Segue um código para ler os arquivos json contendo os documentos da coleção em {path_data}/collection_json, aplicar a função analyze na chave "contents" de cada documento e salvar o resultado em um arquivo com sufixo "_prep":
+
+```
+import json
+from pathlib import Path
+from tqdm.auto import tqdm
+
+def analyze(text):
+    # Aqui você pode implementar a sua função de preprocessamento do texto
+    # Por exemplo, utilizando uma biblioteca de processamento de linguagem natural como o NLTK ou o spaCy
+    # Para este exemplo, apenas convertemos o texto para letras minúsculas e o separamos em tokens pelo espaço em branco
+    tokens = text.lower().split()
+    return tokens
+
+path_data = "/caminho/para/a/pasta/data"
+
+# Caminho para a pasta contendo os arquivos JSON
+path_collection = Path(path_data) / "collection_json"
+
+# Percorrendo todos os arquivos da pasta collection_json e aplicando a função analyze na chave "contents" de cada documento
+for json_file in tqdm(path_collection.glob("*.json"), desc="Arquivos JSON"):
+    # Lendo o arquivo JSON
+    with open(json_file, "r") as f:
+        data = json.load(f)
+
+    # Aplicando a função analyze na chave "contents" do documento
+    data["contents_prep"] = analyze(data["contents"])
+
+    # Salvando o arquivo com sufixo "_prep"
+    with open(json_file.with_name(json_file.stem + "_prep.json"), "w") as f:
+        json.dump(data, f)
+
+```
+
+Cada documento terá um novo campo chamado "contents_prep" com a lista de tokens gerada pela função `analyze`. Esse novo campo é adicionado ao dicionário `data`, que representa o documento em formato JSON. Em seguida, o arquivo é salvo com sufixo "_prep" usando o mesmo nome e o mesmo diretório do arquivo original.
+
+
+***
+
+**Human:**
+Esqueci de comentar que precisamos fazer isso para cada  linha do arquivo.
+
+***
+
+**Assistant:**
+
+Entendido. Para processar cada linha do arquivo, podemos utilizar um loop que lê cada arquivo JSON e aplica a função `analyze` na chave `contents` de cada dicionário. Em seguida, podemos criar um novo arquivo com o sufixo "_prep" contendo as informações pré-processadas.
+
+Segue o código para realizar essa tarefa:
+
+```
+import json
+import os
+from pathlib import Path
+from typing import List
+
+# Define a função para pré-processar os documentos
+def analyze(text: str) -> List[str]:
+    # Aqui entra o código para pré-processar o texto, por exemplo:
+    # tokens = text.lower().split()
+    # return tokens
+    return []
+
+# Define o caminho para a pasta com os arquivos JSON
+path_data = '/caminho/para/pasta/data'
+
+# Loop para pré-processar cada arquivo
+for file_path in Path(path_data, 'collection_json').glob('*.json'):
+    # Lê o arquivo JSON
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+    
+    # Aplica a função analyze na chave "contents" de cada dicionário
+    for doc in data:
+        doc['contents_prep'] = analyze(doc['contents'])
+    
+    # Cria o novo arquivo com as informações pré-processadas
+    output_path = str(file_path).replace('.json', '_prep.json')
+    with open(output_path, 'w') as f:
+        json.dump(data, f)
+
+```
+
+Esse código lê todos os arquivos JSON na pasta `path_data/collection_json`, aplica a função `analyze` na chave `contents` de cada dicionário e salva um novo arquivo JSON com as informações pré-processadas na mesma pasta.
+
+
+***
+
+**Human:**
+mas eu não quero salvar na saída a chave contents.
+
+***
+
+**Assistant:**
+
+Entendi. Nesse caso, você pode modificar a função `analyze` para retornar uma lista de tokens sem a chave "contents" e utilizar essa nova função para criar o arquivo de saída. Aqui está um exemplo de código:
+
+```
+import json
+
+def analyze(contents):
+    # implementação da função analyze
+    tokens = ... # lista de tokens gerada a partir do conteúdo
+    
+    return tokens
+
+# diretório com os arquivos json
+path_data = 'caminho/para/o/diretorio'
+
+# percorre todos os arquivos do diretório
+for filename in os.listdir(path_data):
+    if filename.endswith('.json'):
+        # lê o arquivo
+        with open(os.path.join(path_data, filename), 'r') as f:
+            data = json.load(f)
+        
+        # processa cada linha do arquivo
+        for item in data:
+            # aplica a função analyze no campo 'contents'
+            item['tokens'] = analyze(item['contents'])
+            
+        # salva o arquivo com o sufixo "_prep"
+        output_filename = os.path.splitext(filename)[0] + '_prep' + '.json'
+        with open(os.path.join(path_data, output_filename), 'w') as f:
+            json.dump(data, f)
+
+```
+
+Nesse exemplo, a função `analyze` é modificada para adicionar uma nova chave "tokens" ao dicionário `item`, que representa uma linha do arquivo json. Em seguida, o arquivo é salvo com o sufixo "_prep" e a nova chave "tokens" é incluída no arquivo de saída.
+
+
+***
+
+**Human:**
+preciso substituir doc['contents'] por doc['tokens']
+
+***
+
+**Assistant:**
+
+Para substituir o valor da chave 'contents' por 'tokens' em cada documento, basta modificar a linha que faz a atribuição. Ficaria assim:
+
+```
+doc['tokens'] = analyze(doc['contents'])
+del doc['contents']
+
+```
+
+Dessa forma, a função `analyze` é aplicada ao valor da chave 'contents', e a lista de tokens gerada é armazenada na chave 'tokens'. Em seguida, a chave 'contents' é removida do dicionário.
+
+
+***
+
+**Human:**
+na realidade, cada linha tem um json
+
+***
+
+**Assistant:**
+
+Então, você pode fazer assim:
+
+```
+import json
+from tqdm.auto import tqdm
+
+def preprocess_collection(collection_path: str):
+    with open(collection_path, 'r') as f:
+        collection = json.load(f)
+    
+    for doc in tqdm(collection):
+        doc['tokens'] = analyze(doc['contents'])
+        del doc['contents']
+    
+    output_path = collection_path.replace('.json', '_prep.json')
+    
+    with open(output_path, 'w') as f:
+        json.dump(collection, f)
+
+```
+
+Essa função carrega o arquivo json na variável `collection`, percorre cada documento com um loop `for`, realiza a pré-processamento com a função `analyze` e salva os tokens na chave `tokens` do dicionário do documento. Depois, remove a chave `contents` com `del doc['contents']`. Por fim, salva o novo arquivo json com sufixo `_prep` no final do nome.
+
+
+***
+
+**Human:**
+não dá para carregar o arquivo todo como um único json
+
+***
+
+**Assistant:**
+
+Se cada linha contém um JSON, você pode ler linha por linha do arquivo e converter cada linha para um objeto JSON usando o módulo `json` do Python. Aqui está uma maneira de fazer isso:
+
+```
+import json
+
+def preprocess_docs(input_path, output_path):
+    with open(input_path, 'r') as f_in, open(output_path, 'w') as f_out:
+        for line in f_in:
+            doc = json.loads(line)
+            doc['tokens'] = analyze(doc['contents'])
+            del doc['contents']
+            json.dump(doc, f_out)
+            f_out.write('\n')
+
+```
+
+Nessa implementação, `json.loads()` é usado para converter cada linha em um objeto JSON. Depois, a função `analyze()` é usada para pré-processar o campo 'contents' e armazenar o resultado no campo 'tokens'. Em seguida, o campo 'contents' é removido do objeto JSON e o objeto é gravado de volta no arquivo usando `json.dump()`. O caractere '\n' é adicionado no final de cada objeto para separá-los em linhas no arquivo de saída.
+
+Para usar a função `preprocess_docs()`, basta passar o caminho do arquivo de entrada e o caminho do arquivo de saída:
+
+```
+preprocess_docs('{path_data}/collection_json', '{path_data}/collection_json_prep')
+
+```
+
+
+***
+
+**Human:**
+agora fazer isso para todos os arquivos em path_data = 'caminho/para/o/diretorio'
+
+***
+
+**Assistant:**
+
+Para executar o pré-processamento em todos os arquivos no diretório `path_data`, você pode usar a função `os.listdir()` para obter a lista de arquivos e, em seguida, iterar sobre ela, processando cada arquivo individualmente.
+
+Aqui está um exemplo de como você pode fazer isso:
+
+```
+import json
+import os
+
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from string import punctuation
+
+stopwords = set(stopwords.words('english') + list(punctuation))
+
+def preprocess_text(text):
+    tokens = word_tokenize(text.lower())
+    return [token for token in tokens if token not in stopwords]
+
+path_data = 'caminho/para/o/diretorio'
+
+for file_name in os.listdir(path_data):
+    if not file_name.endswith('.json'):
+        continue
+
+    # Ler arquivo original
+    with open(os.path.join(path_data, file_name), 'r') as f:
+        data = json.load(f)
+
+    # Pré-processar conteúdo
+    for doc in data:
+        doc['tokens'] = preprocess_text(doc['contents'])
+        del doc['contents']
+
+    # Salvar arquivo pré-processado
+    new_file_name = os.path.splitext(file_name)[0] + '_prep.json'
+    with open(os.path.join(path_data, new_file_name), 'w') as f:
+        json.dump(data, f)
+
+```
+
+Este código percorre todos os arquivos com a extensão ".json" no diretório `path_data`, carrega cada arquivo como um objeto Python e pré-processa o conteúdo de cada documento, salvando o resultado em um novo arquivo com sufixo "_prep.json". O código usa a biblioteca `json` para carregar e salvar arquivos JSON e a biblioteca `os` para lidar com arquivos e diretórios. Além disso, o código usa a biblioteca `nltk` para tokenização e remoção de stopwords.
+
+
+***
+
+**Human:**
+não daria para usar o glob mais?
+
+***
+
+**Assistant:**
+
+Sim, é possível utilizar a biblioteca `glob` para obter todos os arquivos com extensão `.json` em um diretório específico. Segue um exemplo de como poderia ser feito:
+
+```
+import json
+import glob
+import os
+
+def preprocess_docs_in_directory(input_dir_path: str, output_dir_path: str) -> None:
+    """
+    Lê todos os arquivos json em um diretório de entrada, pré-processa o texto
+    e salva o resultado em um novo arquivo com o mesmo nome e sufixo "_prep"
+    em um diretório de saída.
+
+    Args:
+        input_dir_path (str): Caminho para o diretório de entrada contendo arquivos json.
+        output_dir_path (str): Caminho para o diretório de saída onde serão salvos os arquivos pré-processados.
+    """
+    # Verifica se o diretório de saída existe. Se não, cria o diretório.
+    if not os.path.exists(output_dir_path):
+        os.makedirs(output_dir_path)
+
+    # Obtém a lista de arquivos json no diretório de entrada.
+    json_files = glob.glob(os.path.join(input_dir_path, '*.json'))
+
+    # Processa cada arquivo json.
+    for json_file in json_files:
+        with open(json_file, 'r') as f:
+            # Carrega o json.
+            doc = json.load(f)
+
+            # Pré-processa o texto e salva a lista de tokens em doc['tokens'].
+            doc['tokens'] = analyze(doc['contents'])
+
+        # Salva o json pré-processado em um novo arquivo com o mesmo nome e sufixo "_prep".
+        file_name = os.path.basename(json_file)
+        output_file_path = os.path.join(output_dir_path, file_name.replace('.json', '_prep.json'))
+        with open(output_file_path, 'w') as f:
+            json.dump(doc, f)
+
+```
+
+Com esta função, você pode pré-processar todos os arquivos em um diretório específico chamando `preprocess_docs_in_directory(caminho_do_diretorio_de_entrada, caminho_do_diretorio_de_saida)`.
+
+
+***
+
+**Human:**
+favor ler linha a linha
+
+***
+
+**Assistant:**
+
+Claro! Basta fazer a leitura linha a linha dentro do loop, assim como fizemos anteriormente. Segue o exemplo:
+
+```
+import json
+import os
+from typing import List
+
+def preprocess_documents(file_path: str) -> List[dict]:
+    with open(file_path, 'r') as f:
+        docs = []
+        for line in f:
+            doc = json.loads(line)
+            tokens = analyze(doc['contents'])
+            doc['tokens'] = tokens
+            del doc['contents']
+            docs.append(doc)
+    return docs
+
+# diretório contendo os arquivos a serem processados
+path_data = 'caminho/para/o/diretorio'
+
+# loop pelos arquivos no diretório
+for file_name in os.listdir(path_data):
+    if file_name.endswith('.json'):
+        # caminho completo do arquivo
+        file_path = os.path.join(path_data, file_name)
+        # gera o nome do arquivo de saída com sufixo "_prep"
+        out_file_path = os.path.splitext(file_path)[0] + '_prep' + os.path.splitext(file_path)[1]
+        # chama a função de preprocessamento
+        docs = preprocess_documents(file_path)
+        # salva o resultado no arquivo de saída
+        with open(out_file_path, 'w') as out_file:
+            for doc in docs:
+                out_file.write(json.dumps(doc) + '\n')
+
+```
+
+Nesse exemplo, cada arquivo é lido linha a linha dentro do loop principal. Primeiro, o caminho completo do arquivo é gerado a partir do diretório `path_data` e do nome do arquivo. Em seguida, o nome do arquivo de saída é gerado adicionando o sufixo "_prep" antes da extensão. Por fim, a função `preprocess_documents` é chamada para fazer o preprocessamento de cada linha do arquivo e gerar a lista de dicionários com as informações necessárias. O resultado é salvo no arquivo de saída, novamente linha a linha, para que não ocorra problemas de memória caso o arquivo seja muito grande.
+
+
+***
+
+**Human:**
+nesse código
+
+        for line in tqdm(f, desc=f'acessando {file_path}'):
+          doc = json.loads(line)
+          docs_json[int(doc['id'])] = preprocessar(doc['contents'])
+		  
+Como aumentar o intervalo do tqdm para dar display a cada 10000 linhas lidas?
+
+***
+
+**Assistant:**
+
+Para aumentar o intervalo do tqdm para dar display a cada 10000 linhas lidas, podemos usar o parâmetro `step` e definir seu valor como 10000, da seguinte maneira:
+
+```
+for line in tqdm(f, desc=f'acessando {file_path}', step=10000):
+
+```
+
+Com isso, o tqdm irá atualizar o display a cada 10000 linhas lidas.
+
+
+***
+
+**Human:**
+TqdmKeyError: "Unknown argument(s): {'step': 100000}"
+
+***
+
+**Assistant:**
+
+Desculpe pelo engano anterior. Para definir um intervalo de atualização personalizado com o `tqdm`, você pode usar o argumento `update` e passar o número de linhas que deseja atualizar, em vez de usar o argumento `step`. Então, para atualizar a cada 10000 linhas lidas, você pode definir `update=10000`.
+
+Aqui está o exemplo de como fazer isso:
+
+```
+from glob import glob
+import json
+from tqdm.auto import tqdm
+
+path_data = 'caminho/para/o/diretorio'
+
+def preprocessar(texto):
+    # Sua função preprocessar aqui
+    pass
+
+for file_path in glob(f'{path_data}/*.json'):
+    docs_json = {}
+
+    with open(file_path, 'r') as f:
+        for i, line in enumerate(tqdm(f, desc=f'acessando {file_path}', total=len(f), update=10000)):
+            doc = json.loads(line)
+            docs_json[int(doc['id'])] = preprocessar(doc['contents'])
+            
+    with open(f'{file_path}_prep', 'w') as f:
+        json.dump(docs_json, f)
+
+```
+
+Isso atualizará o tqdm a cada 10000 linhas lidas, mas observe que o total ainda é definido como o número total de linhas no arquivo, para que o tqdm possa calcular o progresso total.
+
+
+***
+
+**Human:**
+TypeError: object of type '_io.TextIOWrapper' has no len()
+
+***
+
+**Assistant:**
+
+Esse erro ocorre porque o objeto do tipo `_io.TextIOWrapper`, retornado pela função `open`, não possui o método `len()`. Para corrigir esse erro, você pode usar a biblioteca `tqdm` para monitorar o progresso da leitura do arquivo, sem precisar saber a quantidade total de linhas do arquivo. Um exemplo de código para fazer isso seria:
+
+```
+from tqdm import tqdm
+
+def ler_arquivo(input_file):
+    docs_json = {}
+    with open(input_file, 'r') as f:
+        for line in tqdm(f, desc=f'acessando {input_file}'):
+            doc = json.loads(line)
+            # faça o processamento do documento aqui
+            docs_json[int(doc['id'])] = preprocessar(doc['contents'])
+    return docs_json
+
+```
+
+Nesse código, o objeto `f` (retorno da função `open`) é passado para a função `tqdm`, que monitora o progresso da leitura do arquivo sem precisar saber a quantidade total de linhas. O parâmetro `desc` permite adicionar uma descrição ao progresso, como "acessando arquivo.txt".
+
+
+***
+
+**Human:**
+TqdmKeyError: "Unknown argument(s): {'update': 10000}"
+
+***
+
+**Assistant:**
+
+Para usar o argumento `update` no tqdm é necessário ter a versão 4.62.0 ou superior instalada. Caso você esteja usando uma versão inferior, você pode atualizar o tqdm com o seguinte comando:
+
+```
+!pip install tqdm --upgrade
+
+```
+
+Caso já tenha a versão mais recente e ainda esteja enfrentando o erro, verifique se você digitou corretamente o nome do argumento, pois `update` é diferente de `interval`. O argumento correto para definir o intervalo de atualização é `interval`. O código corrigido seria:
+
+```
+for line in tqdm(f, desc=f'acessando {file_path}', total=num_lines, interval=10000):
+    doc = json.loads(line)
+    docs_json[int(doc['id'])] = preprocessar(doc['contents'])
+
+```
+
+
+***
+
+**Human:**
+mas como definir num_lines?
+
+***
+
+**Assistant:**
+
+Para definir o `num_lines` você pode utilizar o módulo `fileinput` da biblioteca padrão do Python. Você pode utilizar o método `input()` para ler o arquivo e o método `fileinput.input()` para contar o número de linhas.
+
+Por exemplo:
+
+```
+import fileinput
+
+num_lines = 0
+for line in fileinput.input(file_path):
+    num_lines += 1
+
+```
+
+Dessa forma, a variável `num_lines` terá o número total de linhas do arquivo especificado em `file_path`.
+
+
+***
+
+**Human:**
+favor documentar o código abaixo com docstring e antes de cada linha 
+
+def preprocess_document_lines(path_json_passage: str):
+  for file_name in tqdm(os.listdir(path_json_passage), desc=f'iterando arquivos json em  {path_json_passage}'):
+    print(file_name)
+    if file_name.endswith('_prep.json'):
+        continue
+        
+    print('em preprocess_document_lines', file_path)
+    with open(file_path, 'r') as f:
+        docs_json = {}
+        for line in tqdm(f, desc=f'acessando {file_path}', total=1000000, interval=10000):
+          doc = json.loads(line)
+          docs_json[int(doc['id'])] = preprocessar(doc['contents'])
+
+    # Salvar arquivo pré-processado
+    new_file_name = os.path.splitext(file_name)[0] + '_prep.json'
+    print(new_file_name)
+    with open(os.path.join(path_json_passage, new_file_name), 'w') as f:
+        json.dump(docs_json, f)
+
+***
+
+**Assistant:**
+
+Aqui está a função `preprocess_document_lines` com as instruções e comentários solicitados:
+
+```
+def preprocess_document_lines(path_json_passage: str):
+  """
+  Lê arquivos json no diretório `path_json_passage`, pré-processa os conteúdos (chave 'contents')
+  utilizando a função `preprocessar` e salva os novos arquivos com o mesmo nome, mas com sufixo "_prep".
+
+  Args:
+    path_json_passage (str): Caminho para o diretório contendo arquivos json.
+
+  """
+  # Iterar sobre todos os arquivos no diretório
+  for file_name in tqdm(os.listdir(path_json_passage), desc=f'iterando arquivos json em  {path_json_passage}'):
+    print(file_name)
+    if file_name.endswith('_prep.json'):
+        continue
+    
+    # Abrir o arquivo atual para leitura
+    file_path = os.path.join(path_json_passage, file_name)
+    print('em preprocess_document_lines', file_path)
+    with open(file_path, 'r') as f:
+        docs_json = {}
+        # Ler cada linha do arquivo (que contém um json)
+        for line in tqdm(f, desc=f'acessando {file_path}', total=num_lines, interval=10000):
+          doc = json.loads(line)
+          # Adicionar id do documento e seus tokens pré-processados no dicionário
+          docs_json[int(doc['id'])] = preprocessar(doc['contents'])
+
+    # Salvar arquivo pré-processado com novo nome
+    new_file_name = os.path.splitext(file_name)[0] + '_prep.json'
+    print(new_file_name)
+    with open(os.path.join(path_json_passage, new_file_name), 'w') as f:
+        json.dump(docs_json, f)
+
+```
+
+Observe que a função recebe como argumento o caminho para o diretório contendo arquivos json e utiliza a biblioteca `os` para iterar sobre os arquivos no diretório. Em seguida, abre cada arquivo, lê as linhas contendo jsons, pré-processa os conteúdos (chave 'contents') utilizando a função `preprocessar` e salva um novo arquivo com o mesmo nome, mas com sufixo "_prep".
+
+
+***
+
+**Human:**
+Favor corrigir erro TqdmKeyError: "Unknown argument(s): {'interval': 100000}"
+
+***
+
+**Assistant:**
+
+O argumento correto para definir o intervalo em que as atualizações devem ser exibidas é `miniters` e não `interval`. Segue o código corrigido:
+
+```
+def preprocess_document_lines(path_json_passage: str):
+  for file_name in tqdm(os.listdir(path_json_passage), desc=f'iterando arquivos json em  {path_json_passage}'):
+    print(file_name)
+    if file_name.endswith('_prep.json'):
+        continue
+    
+    file_path = os.path.join(path_json_passage, file_name)
+    print('em preprocess_document_lines', file_path)
+    
+    with open(file_path, 'r') as f:
+        docs_json = {}
+        for line in tqdm(f, desc=f'acessando {file_path}', total=1000000, miniters=10000):
+          doc = json.loads(line)
+          docs_json[int(doc['id'])] = preprocessar(doc['contents'])
+
+    # Salvar arquivo pré-processado
+    new_file_name = os.path.splitext(file_name)[0] + '_prep.json'
+    print(new_file_name)
+    with open(os.path.join(path_json_passage, new_file_name), 'w') as f:
+        json.dump(docs_json, f)
+
+```
+
+
+***
+
+**Human:**
+topics é um dict de queries com a seguinte estrutura: chave 'id' e value um dict com chave 'title' e value o seu texto.
+
+preciso preprocessar os textos desses títulos e gerar novo dicionário topics_prep com os elementos do topics mais uma chave 'tokens' resultado da chamada da função preprocessar sobre o "title"
+
+Favor gerar o código.
+
+***
+
+**Assistant:**
+
+Segue código para preprocessar os títulos do dicionário `topics` e criar um novo dicionário `topics_prep` com uma chave adicional "tokens":
+
+```
+def preprocess_topics(topics):
+    topics_prep = {}
+    for topic_id, topic_data in topics.items():
+        topic_title = topic_data['title']
+        topic_tokens = preprocessar(topic_title)
+        topic_data['tokens'] = topic_tokens
+        topics_prep[topic_id] = topic_data
+    return topics_prep
+
+```
+
+A função `preprocess_topics` recebe como argumento o dicionário `topics` e retorna o novo dicionário `topics_prep`. Para cada item no dicionário `topics`, a função extrai o texto do título e chama a função `preprocessar` para pré-processar o texto. O resultado é adicionado ao dicionário original na chave `tokens`. O novo dicionário com a chave adicional é adicionado ao dicionário de saída `topics_prep`.
+
+
+***
+
+**Human:**
+favor documentar o código com docstring e antes de cada linha
+
+***
+
+**Assistant:**
+
+Claro, segue abaixo o código documentado:
+
+```
+def preprocess_topic_titles(topics: dict) -> dict:
+    """
+    Função que pré-processa o texto dos títulos dos tópicos do dataset TREC.
+
+    Args:
+        topics (dict): Dicionário com as queries do dataset TREC.
+
+    Returns:
+        dict: Dicionário com as queries pré-processadas e seus respectivos tokens.
+    """
+    topics_prep = {}
+
+    # Itera sobre as queries do dicionário topics
+    for query_id, query_text in tqdm(topics.items(), desc="Preprocessando queries"):
+        # Realiza o pré-processamento do texto do título
+        title_prep = preprocessar(query_text['title'])
+        
+        # Adiciona o texto pré-processado na chave 'tokens'
+        query_text['tokens'] = title_prep
+        
+        # Adiciona o resultado ao novo dicionário
+        topics_prep[query_id] = query_text
+    
+    return topics_prep
+
+```
+
+
+***
+
+**Human:**
+Para testar a performance dos buscadores  (BooleanSearcher, BagOfWordsSearcher e TfIdfSearcher) com poucos dados, preciso que você inicialize 3 constantes do tipo dict:
+topics_prep com 3 queries
+documentos_prep com 10 documentos 
+qrels com vinculação de relevância entre elas
+
+todas na estrutura que temos conversado.
+
+***
+
+**Assistant:**
+
+Certo, aqui está um exemplo de como você pode inicializar essas estruturas com poucos dados:
+
+```
+# Queries preprocessadas
+topics_prep = {
+    '1': {'title': 'The quick brown fox jumps over the lazy dog'},
+    '2': {'title': 'The five boxing wizards jump quickly'},
+    '3': {'title': 'How vexingly quick daft zebras jump!'}
+}
+
+# Documentos preprocessados
+documentos_prep = {
+    1: {'title': 'The quick brown fox jumps over the lazy dog. Dogs are lazy animals.'},
+    2: {'title': 'The five boxing wizards jump quickly. Boxing is a sport that requires a lot of training.'},
+    3: {'title': 'How vexingly quick daft zebras jump! Zebras are animals with stripes.'},
+    4: {'title': 'The quick brown fox jumps over the lazy dog. The fox is a cunning animal.'},
+    5: {'title': 'The five boxing wizards jump quickly. Wizards are magical beings.'},
+    6: {'title': 'How vexingly quick daft zebras jump! Vexing means annoying.'},
+    7: {'title': 'The quick brown fox jumps over the lazy dog. Brown is a color.'},
+    8: {'title': 'The five boxing wizards jump quickly. Jumping is a form of exercise.'},
+    9: {'title': 'How vexingly quick daft zebras jump! Daft means foolish.'},
+    10: {'title': 'The quick brown fox jumps over the lazy dog. Lazy people usually procrastinate.'},
+}
+
+# Qrels
+qrels = {
+    '1': {
+        1: 1, 
+        4: 0
+    },
+    '2': {
+        2: 1, 
+        5: 0
+    },
+    '3': {
+        3: 1, 
+        6: 0
+    }
+}
+
+```
+
+Observe que os textos das queries e dos documentos são apenas exemplos simples e que a vinculação de relevância é feita manualmente.
+
+
+***
+
+**Human:**
+ótimo. só ficou faltando a chave 'tokens' nos values em documentos_prep e topics_prep. Ela contem uma lista de tokens a partir dos textos em title.
+
+***
+
+**Assistant:**
+
+Certo, desculpe pelo erro anterior. Aqui está a inicialização das constantes com a chave 'tokens':
+
+```
+# Inicializando constantes para teste de performance dos buscadores
+from typing import Dict, List
+
+# Inicializando queries preprocessadas
+topics_prep: Dict[str, Dict[str, Union[str, List[str]]]] = {
+    '301': {'title': 'International Organized Crime'},
+    '302': {'title': 'Mass Media and Violence'},
+    '303': {'title': 'Water Management'}
+}
+
+# Inicializando documentos preprocessados
+documentos_prep: Dict[int, Dict[str, Union[str, List[str]]]] = {
+    1: {'title': 'Document about international organized crime.', 'tokens': ['document', 'international', 'organized', 'crime']},
+    2: {'title': 'Media violence can increase aggressive behavior.', 'tokens': ['media', 'violence', 'increase', 'aggressive', 'behavior']},
+    3: {'title': 'Effective water management strategies.', 'tokens': ['effective', 'water', 'management', 'strategies']},
+    4: {'title': 'Report on transnational crime.', 'tokens': ['report', 'transnational', 'crime']},
+    5: {'title': 'The role of mass media in shaping public opinion.', 'tokens': ['role', 'mass', 'media', 'shaping', 'public', 'opinion']},
+    6: {'title': 'Water scarcity and conflicts.', 'tokens': ['water', 'scarcity', 'conflicts']},
+    7: {'title': 'Organized crime in Latin America.', 'tokens': ['organized', 'crime', 'latin', 'america']},
+    8: {'title': 'Impact of violent media on youth.', 'tokens': ['impact', 'violent', 'media', 'youth']},
+    9: {'title': 'Water resources in the Middle East.', 'tokens': ['water', 'resources', 'middle', 'east']},
+    10: {'title': 'Overview of organized crime.', 'tokens': ['overview', 'organized', 'crime']}
+}
+
+# Inicializando qrels
+qrels: Dict[str, Dict[int, int]] = {
+    '301': {1: 1, 2: 0, 3: 0, 4: 1, 5: 0, 6: 0, 7: 1, 8: 0, 9: 0, 10: 1},
+    '302': {1: 0, 2: 1, 3: 0, 4: 0, 5: 1, 6: 0, 7: 0, 8: 1, 9: 0, 10: 0},
+    '303': {1: 0, 2: 0, 3: 1, 4: 0, 5: 0, 6: 1, 7: 0, 8: 0, 9: 1, 10: 0}
+}
+
+```
+
+
+***
+
+**Human:**
+faltou 'tokens' em topics_prep.
+
+***
+
+**Assistant:**
+
+Desculpe pelo erro, segue abaixo a correção:
+
+```
+topics_prep = {
+    '401': {'title': 'International Organized Crime', 'tokens': preprocessar(topics['401']['title'])},
+    '402': {'title': 'Drug Trafficking', 'tokens': preprocessar(topics['402']['title'])},
+    '403': {'title': 'Money Laundering', 'tokens': preprocessar(topics['403']['title'])}
+}
+
+```
+
+
+***
+
+**Human:**
+em topics_prep substituir em tokens a chamada a preprocessar por uma lista das tokens do title
+
+***
+
+**Assistant:**
+
+Entendido. Segue abaixo o código com as modificações solicitadas:
+
+```
+import json
+from typing import Dict
+
+# Função para pré-processamento de texto
+def preprocessar(texto: str) -> List[str]:
+    # Incluir aqui a lógica de pré-processamento desejada
+    return texto.split()
+
+# Inicializando os dicionários
+topics_prep: Dict[str, Dict[str, Union[str, List[str]]]] = {}
+documentos_prep: Dict[int, Dict[str, Union[str, List[str]]]] = {}
+qrels: Dict[str, Dict[int, int]] = {}
+
+# Definindo algumas queries para teste
+queries = {
+    'query1': {
+        'title': 'documentos sobre aprendizado de máquina'
+    },
+    'query2': {
+        'title': 'análise de sentimentos em redes sociais'
+    },
+    'query3': {
+        'title': 'recuperação de informação em textos científicos'
+    }
+}
+
+# Pré-processamento das queries
+for query_id, query in queries.items():
+    query_title = query['title']
+    tokens = preprocessar(query_title)
+    query['tokens'] = tokens
+    topics_prep[query_id] = query
+
+# Definindo alguns documentos para teste
+docs = [
+    {
+        'id': 'doc1',
+        'title': 'introdução ao aprendizado de máquina',
+        'text': 'o aprendizado de máquina é uma técnica de inteligência artificial que permite que as máquinas aprendam a partir de dados'
+    },
+    {
+        'id': 'doc2',
+        'title': 'redes neurais artificiais',
+        'text': 'as redes neurais artificiais são um modelo computacional inspirado no sistema nervoso central que permite o aprendizado a partir de exemplos'
+    },
+    {
+        'id': 'doc3',
+        'title': 'análise de sentimentos em textos',
+        'text': 'a análise de sentimentos em textos é uma técnica de processamento de linguagem natural que permite identificar a polaridade de um texto'
+    },
+    {
+        'id': 'doc4',
+        'title': 'classificação de textos com árvores de decisão',
+        'text': 'a classificação de textos com árvores de decisão é uma técnica de aprendizado de máquina que permite classificar um texto em uma ou mais categorias'
+    },
+    {
+        'id': 'doc5',
+        'title': 'análise de redes sociais',
+        'text': 'a análise de redes sociais é uma técnica que permite entender a estrutura e o comportamento de redes sociais a partir de dados'
+    },
+    {
+        'id': 'doc6',
+        'title': 'recuperação de informação em textos científicos',
+        'text': 'a recuperação de informação em textos científicos é uma técnica que permite encontrar informações relevantes em grandes volumes de textos científicos'
+    },
+    {
+        'id': 'doc7',
+        'title': 'classificação de imagens com redes convolucionais',
+        'text': 'a classificação de imagens com redes convolucionais é uma técnica de aprendizado de máquina que permite classificar imagens em uma ou mais categorias'
+    },
+    {
+        'id': 'doc8',
+        'title': 'mineração de dados em redes sociais',
+        'text': 'a mineração de dados em redes soc
+
+```
+
+
+***
+
+**Human:**
+Ajustei aqui e ficaram assim:
+
+# Inicializando queries preprocessadas
+topics_prep_test = {
+    '301': {'title': 'International Organized Crime', 'tokens': ['international', 'organized', 'Crime']},
+    '302': {'title': 'Mass Media and Violence', 'tokens': ['mass', 'media' ,'Violence']},
+    '303': {'title': 'Water Management', 'tokens': ['water', 'management']}
+}
+
+# Inicializando documentos preprocessados
+documentos_prep_test = {
+    1: {'title': 'Document about international organized crime.', 'tokens': ['document', 'international', 'organized', 'crime']},
+    2: {'title': 'Media violence can increase aggressive behavior.', 'tokens': ['media', 'violence', 'increase', 'aggressive', 'behavior']},
+    3: {'title': 'Effective water management strategies.', 'tokens': ['effective', 'water', 'management', 'strategies']},
+    4: {'title': 'Report on transnational crime.', 'tokens': ['report', 'transnational', 'crime']},
+    5: {'title': 'The role of mass media in shaping public opinion.', 'tokens': ['role', 'mass', 'media', 'shaping', 'public', 'opinion']},
+    6: {'title': 'Water scarcity and conflicts.', 'tokens': ['water', 'scarcity', 'conflicts']},
+    7: {'title': 'Organized crime in Latin America.', 'tokens': ['organized', 'crime', 'latin', 'america']},
+    8: {'title': 'Impact of violent media on youth.', 'tokens': ['impact', 'violent', 'media', 'youth']},
+    9: {'title': 'Water resources in the Middle East.', 'tokens': ['water', 'resources', 'middle', 'east']},
+    10: {'title': 'Overview of organized crime.', 'tokens': ['overview', 'organized', 'crime']}
+}
+
+# Inicializando qrels
+qrels_test: Dict[str, Dict[int, int]] = {
+    '301': {1: 1, 2: 0, 3: 0, 4: 1, 5: 0, 6: 0, 7: 1, 8: 0, 9: 0, 10: 1},
+    '302': {1: 0, 2: 1, 3: 0, 4: 0, 5: 1, 6: 0, 7: 0, 8: 1, 9: 0, 10: 0},
+    '303': {1: 0, 2: 0, 3: 1, 4: 0, 5: 0, 6: 1, 7: 0, 8: 0, 9: 1, 10: 0}
+}
+
+***
+
+**Assistant:**
+
+Ótimo, agora temos os dados de teste iniciais. Agora podemos criar instâncias de cada um dos buscadores e avaliar sua performance em relação às queries e documentos que acabamos de criar. Qualquer dúvida, é só me avisar.
+
+
+***
+
+**Human:**
+Favor me passar o código da classe BooleanSearcher (usando pythorch e gpu).  
+
+Deverá possuir os métodos __init__, search, _create_index e _numericaliza.
+
+O método __init__ deve receber o dicionário json com estrutura igual à de documentos_prep_test.
+
+Deve chamar o  _create_index que, entre outras coisas, deve criar o vocabulário self.vocab a partir da chave 'tokens' na estrutura de documentos_prep_test.
+
+
+Após criar o self.vocab, o método _create_index deve chamar o método _numericaliza passando a chave 'tokens'.
+
+
+O método _numericaliza deve receber uma lista de strings e converter em um tensor pythorch considerando self.vocab. 
+
+
+
+***
+
+**Assistant:**
+
+Claro, segue abaixo o código da classe BooleanSearcher com as funcionalidades solicitadas:
+
+```
+import torch
+import numpy as np
+from typing import Dict, List
+
+class BooleanSearcher:
+    def __init__(self, documentos: Dict[int, Dict[str, List[str]]]):
+        """
+        Construtor da classe BooleanSearcher.
+        
+        :param documentos: Dicionário com a estrutura {id: {'title': str, 'tokens': List[str]}}.
+        """
+        self.vocab = None
+        self.index = None
+        self.documentos = documentos
+        self._create_index()
+    
+    def search(self, consulta: str) -> List[int]:
+        """
+        Realiza a busca booleana por documentos que contenham todas as palavras da consulta.
+        
+        :param consulta: Consulta como string.
+        :return: Lista de ids dos documentos que contêm todas as palavras da consulta.
+        """
+        consulta = consulta.lower().split()
+        tokens_consulta = []
+        for token in consulta:
+            if token in self.vocab:
+                tokens_consulta.append(self.vocab[token])
+        
+        if len(tokens_consulta) == 0:
+            return []
+        
+        tokens_consulta = torch.tensor(tokens_consulta, device=self.device)
+        hits = self.index[:, tokens_consulta].all(dim=1)
+        docs_ids = np.where(hits.cpu())[0]
+        return list(docs_ids)
+    
+    def _create_index(self):
+        """
+        Cria o índice invertido a partir da chave 'tokens' do dicionário de documentos.
+        """
+        tokens = [doc['tokens'] for doc in self.documentos.values()]
+        vocab_set = set([token for tokens_doc in tokens for token in tokens_doc])
+        self.vocab = {token: i for i, token in enumerate(sorted(vocab_set))}
+        
+        self.index = torch.zeros((len(self.documentos), len(self.vocab)), device=self.device)
+        for i, doc in enumerate(self.documentos.values()):
+            doc_tokens = doc['tokens']
+            self.index[i, self._numericaliza(doc_tokens)] = 1
+            
+    def _numericaliza(self, tokens: List[str]) -> List[int]:
+        """
+        Converte uma lista de tokens em uma lista de índices numéricos baseados no vocabulário.
+        
+        :param tokens: Lista de tokens.
+        :return: Lista de índices numéricos.
+        """
+        return [self.vocab[token] for token in tokens if token in self.vocab]
+
+```
+
+Obs: A classe assume que uma GPU está disponível e pode ser utilizada para acelerar o processamento. Caso isso não seja desejado, basta remover a variável `device=self.device` das chamadas de `torch.tensor()` e `torch.zeros()`.
+
+
+***
+
+**Human:**
+é para usar a chave "tokens" em cada documento que já é uma lista de tokens
+
+***
+
+**Assistant:**
+
+Sim, você tem razão. No método `_create_index`, a lista de tokens deve ser obtida diretamente da chave "tokens" de cada documento. Segue o código corrigido:
+
+```
+import torch
+from collections import Counter
+from typing import Dict
+
+class BooleanSearcher:
+    def __init__(self, docs: Dict[int, Dict[str, str]]):
+        self.index = None
+        self.vocab = None
+        self.docs = docs
+        self._create_index()
+
+    def search(self, query: str):
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _create_index(self):
+        all_tokens = []
+        for doc in self.docs.values():
+            all_tokens += doc["tokens"]
+        self.vocab = sorted(set(all_tokens))
+        self.index = torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()])
+
+    def _numericaliza(self, tokens, vocab):
+        token_counts = Counter(tokens)
+        indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+        values = torch.Tensor([count for token, count in token_counts.items() if token in vocab])
+        return torch.sparse_coo_tensor([indexes], values, [len(vocab)])
+
+```
+
+
+***
+
+**Human:**
+faltou criar o self.vocab
+
+***
+
+**Assistant:**
+
+Desculpe, faltou mesmo. Adicionei abaixo:
+
+```
+class BooleanSearcher:
+    def __init__(self, documentos: Dict[int, Dict[str, Union[str, List[str]]]]):
+        self.documentos = documentos
+        self.vocab = self._create_index()
+
+    def search(self, query: str):
+        pass
+
+    def _create_index(self):
+        vocab = set()
+        for doc in self.documentos.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = vocab
+        self._numericaliza('tokens')
+        return vocab
+
+    def _numericaliza(self, field):
+        word_to_ix = {word: i for i, word in enumerate(self.vocab)}
+        for doc_id, doc in self.documentos.items():
+            tokens = doc[field]
+            doc[field] = torch.tensor([word_to_ix[t] for t in tokens], dtype=torch.long, device=device)
+
+```
+
+Com isso, o vocabulário é criado na chamada ao `_create_index` e o método `_numericaliza` converte as listas de tokens em tensores do PyTorch considerando o vocabulário criado.
+
+
+***
+
+**Human:**
+Prefiro o outro código. O anterior. Mas não é melhor usar Counter()?
+
+***
+
+**Assistant:**
+
+Sim, o uso do `Counter` pode ser uma opção mais elegante e eficiente para construir o vocabulário a partir das listas de tokens. Você pode utilizar a função `collections.Counter` do Python para contar a frequência de cada token em todas as listas de tokens e, em seguida, criar um índice para cada token, como no exemplo abaixo:
+
+```
+import collections
+
+token_counter = collections.Counter()
+for doc_id, doc in self.docs.items():
+    tokens = doc['tokens']
+    token_counter.update(tokens)
+
+self.vocab = {token: idx for idx, token in enumerate(token_counter.keys())}
+
+```
+
+Note que a função `collections.Counter` retorna um objeto que pode ser iterado para recuperar as chaves (tokens) e valores (frequências) da contagem. Em seguida, é possível criar um índice para cada token com um loop simples, usando a função `enumerate` para gerar os índices.
+
+
+***
+
+**Human:**
+Como tornar esse código mais eficiente?
+
+***
+
+**Assistant:**
+
+Existem algumas formas de tornar esse código mais eficiente:
+
+1. Utilizar a biblioteca `collections.Counter`, que é otimizada para contar elementos de uma lista.
+2. Utilizar o método `extend` ao invés de um loop para adicionar as palavras do documento ao vocabulário.
+3. Utilizar um conjunto ao invés de uma lista para armazenar as palavras únicas do vocabulário, já que a ordem das palavras não é relevante para a busca booleana.
+
+
+Com essas mudanças, o código ficaria assim:
+
+```
+from typing import Dict, List
+from collections import Counter
+
+class BooleanSearcher:
+    def __init__(self, documents: Dict[int, Dict[str, List[str]]]):
+        self.vocab = set()
+        self.inverted_index = {}
+        self._create_index(documents)
+
+    def search(self, query: List[str]) -> List[int]:
+        # Função para buscar documentos com a busca booleana.
+        pass
+
+    def _create_index(self, documents: Dict[int, Dict[str, List[str]]]):
+        # Função para criar o índice invertido a partir dos documentos.
+        for doc_id, doc in documents.items():
+            self._numericaliza(doc['tokens'])
+            for word in doc['tokens']:
+                if word not in self.inverted_index:
+                    self.inverted_index[word] = set()
+                self.inverted_index[word].add(doc_id)
+
+    def _numericaliza(self, tokens: List[str]):
+        # Função para adicionar as palavras do documento ao vocabulário.
+        self.vocab.update(tokens)
+
+```
+
+Com essas mudanças, o tempo de execução do método `_create_index` deve diminuir consideravelmente, tornando o processo de indexação mais rápido e eficiente.
+
+
+***
+
+**Human:**
+Estou usando o código abaixo:
+
+class BooleanSearcher:
+    def __init__(self, docs):
+        self.vocab = None
+        self.docs = docs
+        self._create_index()
+
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = vocab
+        return torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()])
+
+    def search(self, query: str):
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens, vocab):
+        token_counts = Counter(tokens)
+        indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+        values = torch.Tensor([count for token, count in token_counts.items() if token in vocab])
+        return torch.sparse_coo_tensor([indexes], values, [len(vocab)])
+		
+Deu erro 
+AttributeError: 'set' object has no attribute 'index'
+
+***
+
+**Assistant:**
+
+O erro acontece porque a função `index` é aplicável apenas a sequências, como listas e strings, e não em conjuntos (`set`). Uma opção é converter o conjunto `vocab` em uma lista antes de utilizá-lo no método `_numericaliza`. Para isso, basta adicionar a linha `vocab = list(vocab)` no método `_create_index`. O código ficaria assim:
+
+```
+class BooleanSearcher:
+    def __init__(self, docs):
+        self.vocab = None
+        self.docs = docs
+        self._create_index()
+
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        return torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()])
+
+    def search(self, query: str):
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens, vocab):
+        token_counts = Counter(tokens)
+        indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+        values = torch.Tensor([count for token, count in token_counts.items() if token in vocab])
+        return torch.sparse_coo_tensor([indexes], values, [len(vocab)])
+
+```
+
+
+***
+
+**Human:**
+Estou usando o código abaixo:
+class BooleanSearcher:
+    def __init__(self, docs, parm_se_imprime:bool=True):
+        self.vocab = None
+        self.docs = docs
+        self._se_imprime = parm_se_imprime
+        self._create_index()
+		self.tamanho_vocab = len(vocab)
+
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        return torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()])
+
+    def search(self, query: str):
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens, vocab):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+          print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+        if self._se_imprime:
+          print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.Tensor([count for token, count in token_counts.items() if token in vocab])
+        if self._se_imprime:
+          print(f"Em _numericaliza: values = {values}")
+        return torch.sparse_coo_tensor([indexes], values, [len(vocab)])
+
+Mas values deveria retornar zero nas outras posições de um tensor do tamanho de self.tamanho_vocab, e não está retornando.
+
+***
+
+**Assistant:**
+
+Para garantir que o tensor retorne zeros nas posições onde não há ocorrência de um token, você pode criar um tensor com todos os valores zero e, em seguida, definir os valores nas posições onde os tokens aparecem com base no dicionário `token_counts`. Aqui está o código atualizado para o método `_numericaliza`:
+
+```
+def _numericaliza(self, tokens, vocab):
+    token_counts = Counter(tokens)
+    if self._se_imprime:
+        print(f"Em _numericaliza: token_counts = {token_counts}")
+    indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+    if self._se_imprime:
+        print(f"Em _numericaliza: indexes = {indexes}")
+    values = torch.zeros(self.tamanho_vocab)
+    for token, count in token_counts.items():
+        if token in vocab:
+            values[vocab.index(token)] = count
+    if self._se_imprime:
+        print(f"Em _numericaliza: values = {values}")
+    return values
+
+```
+
+Observe que adicionamos a linha `values = torch.zeros(self.tamanho_vocab)` para inicializar o tensor com todos os valores zero. Em seguida, usamos um loop for para definir os valores nas posições onde os tokens aparecem.
+
+
+***
+
+**Human:**
+mudei o nome da classe para class BagofWordsSearcher:
+
+***
+
+**Assistant:**
+
+Então, para que o tensor retorne zero nas outras posições, você pode modificar o código do método `_numericaliza` para criar um tensor vazio com o tamanho do vocabulário e, em seguida, definir os valores apenas nas posições que possuem tokens no documento. Você pode fazer isso utilizando o método `torch.zeros` para criar o tensor vazio e, em seguida, definir os valores utilizando o método `scatter_`.
+
+Aqui está um exemplo de como você pode modificar o método `_numericaliza` para fazer isso:
+
+```
+class BagofWordsSearcher:
+    def __init__(self, docs, parm_se_imprime:bool=True):
+        self.vocab = None
+        self.docs = docs
+        self._se_imprime = parm_se_imprime
+        self._create_index()
+        self.tamanho_vocab = len(self.vocab)
+
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        self.index = torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()])
+
+    def search(self, query: str):
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens, vocab):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.Tensor([count for token, count in token_counts.items() if token in vocab])
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        # Cria um tensor vazio com o tamanho do vocabulário
+        result = torch.zeros(len(vocab))
+        # Define os valores apenas nas posições correspondentes aos tokens
+        result[indexes] = values
+        return result
+
+```
+
+Com essas modificações, o tensor retornado por `_numericaliza` terá o tamanho correto e os valores corretos nas posições correspondentes aos tokens. As outras posições terão valor zero.
+
+
+***
+
+**Human:**
+Estou usando o código abaixo:
+class BagofWordsSearcher:
+    def __init__(self, docs, parm_se_imprime:bool=True):
+        self.vocab = None
+        self.docs = docs
+        self._se_imprime = parm_se_imprime
+        self._create_index()
+        self._tamanho_vocab = len(self.vocab)
+      
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        return torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()])
+
+    def search(self, query: str):
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens, vocab):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(self._tamanho_vocab)
+        for token, count in token_counts.items():
+            if token in vocab:
+                values[vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+Deu erro: 'BagofWordsSearcher' object has no attribute '_tamanho_vocab'
+
+***
+
+**Assistant:**
+
+O erro está ocorrendo porque você está tentando acessar o atributo `_tamanho_vocab` em `self._numericaliza` antes dele ter sido criado em `_create_index`. Uma solução para isso é mover a criação desse atributo para antes da chamada de `_numericaliza`:
+
+```
+class BagofWordsSearcher:
+    def __init__(self, docs, parm_se_imprime:bool=True):
+        self.vocab = None
+        self.docs = docs
+        self._se_imprime = parm_se_imprime
+        self._tamanho_vocab = None
+        self._create_index()
+      
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        self._tamanho_vocab = len(self.vocab)
+        self.index = torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()])
+
+    def search(self, query: str):
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens, vocab):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(self._tamanho_vocab)
+        for token, count in token_counts.items():
+            if token in vocab:
+                values[vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+```
+
+Com essa modificação, o atributo `_tamanho_vocab` será criado no momento da criação do objeto, e portanto estará disponível quando `_numericaliza` for chamado.
+
+
+***
+
+**Human:**
+ótimo! Agora preciso receber o parâmetro device em init e associar aos tensores criados
+
+***
+
+**Assistant:**
+
+Entendi, você pode passar o parâmetro `device` para o construtor `__init__` da classe e usar esse parâmetro para especificar o dispositivo em que o tensor será criado, utilizando o método `to(device)` do PyTorch.
+
+O seu código atualizado com essa modificação seria o seguinte:
+
+```
+import torch
+from collections import Counter
+
+class BagofWordsSearcher:
+    def __init__(self, docs, device='cpu', se_imprime=False):
+        self.vocab = None
+        self.docs = docs
+        self.se_imprime = se_imprime
+        self.device = device
+        self._create_index()
+      
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        self.index = torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()]).to(self.device)
+
+    def search(self, query: str):
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens, vocab):
+        token_counts = Counter(tokens)
+        if self.se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+        if self.se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(len(vocab), device=self.device)
+        for token, count in token_counts.items():
+            if token in vocab:
+                values[vocab.index(token)] = count
+        if self.se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+```
+
+Dessa forma, o parâmetro `device` é adicionado ao construtor `__init__`, e o tensor é criado com o dispositivo especificado utilizando o método `to(self.device)` no método `_create_index()`.
+
+
+***
+
+**Human:**
+favor comentar com docstring e antes de cada linha
+
+***
+
+**Assistant:**
+
+Claro! Segue abaixo o código com as docstrings e os comentários solicitados:
+
+```
+import torch
+from collections import Counter
+from typing import List, Dict
+
+class BagofWordsSearcher:
+    """
+    Classe para busca de documentos utilizando Bag of Words.
+
+    Atributos:
+    - vocab: lista de palavras únicas presentes nos documentos
+    - docs: dicionário contendo os documentos em formato de dicionários
+    - index: matriz esparsa em formato COO contendo a representação numérica dos documentos
+
+    Métodos:
+    - _create_index: cria o vocabulário e a matriz index a partir dos documentos
+    - search: busca documentos que contenham a consulta
+    - _numericaliza: cria a representação numérica de um documento
+    """
+
+    def __init__(self, docs: Dict[str, Dict[str, List[str]]], device: str = 'cpu', print_output: bool = False):
+        """
+        Construtor da classe BagofWordsSearcher.
+
+        Parâmetros:
+        - docs: dicionário contendo os documentos em formato de dicionários
+        - device: dispositivo utilizado para processamento dos tensores (default: 'cpu')
+        - print_output: indica se o output de algumas operações deve ser impresso (default: False)
+        """
+        self.vocab = None
+        self.docs = docs
+        self.print_output = print_output
+        self.device = device
+        self._create_index()
+        self._tamanho_vocab = len(self.vocab)
+
+    def _create_index(self):
+        """
+        Cria o vocabulário e a matriz index a partir dos documentos.
+        """
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+
+        index_rows = []
+        index_cols = []
+        index_data = []
+        for i, doc in enumerate(self.docs.values()):
+            doc_tensor = self._numericaliza(doc['tokens'], self.vocab)
+            for j in range(self._tamanho_vocab):
+                if doc_tensor[j] != 0:
+                    index_rows.append(i)
+                    index_cols.append(j)
+                    index_data.append(doc_tensor[j])
+        self.index = torch.sparse_coo_tensor([index_rows, index_cols], index_data, [len(self.docs), self._tamanho_vocab], device=self.device)
+
+    def search(self, query: str):
+        """
+        Busca documentos que contenham a consulta.
+
+        Parâmetros:
+        - query: string contendo a consulta a ser buscada
+
+        Retorno:
+        - lista contendo os IDs dos documentos que contêm a consulta
+        """
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens: List[str], vocab: List[str]):
+        """
+        Cria a representação numérica de um documento.
+
+        Parâmetros:
+        - tokens: lista de tokens do documento
+        - vocab: lista de palavras únicas presentes nos documentos
+
+        Retorno:
+        - tensor contendo a representação numérica do documento
+        """
+        token_counts = Counter(tokens)
+        if self.print_output:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        values = torch.zeros(self._tamanho_vocab, device=self.device)
+        for token, count in token_counts.items():
+            if token in vocab:
+                values[vocab.index(token)] = count
+
+```
+
+
+***
+
+**Human:**
+Documentar e colocar o device no init para o código a seguir class BagofWordsSearcher:
+    def __init__(self, docs, parm_se_imprime:bool=True):
+        self.vocab = None
+        self.docs = docs
+        self._se_imprime = parm_se_imprime
+        self._create_index()
+        
+      
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self.vocab = {self.vocab}")        
+        self._tamanho_vocab = len(self.vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self.tamanho_vocab = {self.tamanho_vocab}")          
+        return torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()])
+
+    def search(self, query: str):
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens, vocab):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(self._tamanho_vocab)
+        for token, count in token_counts.items():
+            if token in vocab:
+                values[vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+***
+
+**Assistant:**
+
+class BagofWordsSearcher:
+"""
+Classe que implementa uma busca por similaridade utilizando a técnica de "bag of words".
+
+```
+Atributos:
+    vocab: lista de palavras únicas presentes nos documentos
+    docs: dicionário com os documentos que serão indexados
+    _se_imprime: bool que define se as informações serão impressas ou não
+    _tamanho_vocab: tamanho do vocabulário
+    device: dispositivo utilizado para cálculos com tensores
+    
+Métodos:
+    __init__: inicializa a classe
+    _create_index: cria o índice invertido com base nos documentos
+    search: busca os documentos similares a uma query
+    _numericaliza: transforma uma lista de tokens em um tensor numerico
+"""
+
+def __init__(self, docs, parm_se_imprime:bool=True, device=torch.device('cpu')):
+    """
+    Inicializa a classe.
+    
+    Parâmetros:
+        docs: dicionário com os documentos que serão indexados
+        parm_se_imprime: bool que define se as informações serão impressas ou não
+        device: dispositivo utilizado para cálculos com tensores
+    """
+    self.vocab = None
+    self.docs = docs
+    self._se_imprime = parm_se_imprime
+    self.device = device
+    self._create_index()
+    
+def _create_index(self):
+    """
+    Cria o índice invertido com base nos documentos.
+    
+    Retorna:
+        index: tensor com a representação numérica dos documentos
+    """
+    vocab = set()
+    for doc in self.docs.values():
+        vocab.update(set(doc['tokens']))
+    self.vocab = list(vocab)
+    if self._se_imprime:
+        print(f"Em _create_index: self.vocab = {self.vocab}")        
+    self._tamanho_vocab = len(self.vocab)
+    if self._se_imprime:
+        print(f"Em _create_index: self.tamanho_vocab = {self.tamanho_vocab}")          
+    index = torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()]).to(self.device)
+    return index
+
+def search(self, query: str):
+    """
+    Busca os documentos similares a uma query.
+    
+    Parâmetros:
+        query: string com a query a ser buscada
+        
+    Retorna:
+        relevant_docs: lista com os ids dos documentos similares
+    """
+    query_tensor = self._numericaliza(query.split(), self.vocab)
+    relevant_docs = []
+    for i, doc_tensor in enumerate(self.index):
+        if torch.all(doc_tensor == query_tensor):
+            relevant_docs.append(i+1)
+    return relevant_docs
+
+def _numericaliza(self, tokens, vocab):
+    """
+    Transforma uma lista de tokens em um tensor numérico.
+    
+    Parâmetros:
+        tokens: lista de tokens
+        vocab: lista com o vocabulário
+        
+    Retorna:
+        values: tensor com a representação numérica dos tokens
+    """
+    token_counts = Counter(tokens)
+    if self._se_imprime:
+        print(f"Em _numericaliza: token_counts = {token_counts}")
+    indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+    if self._se_imprime:
+        print(f"Em _numericaliza: indexes = {indexes}")
+    values = torch.zeros(self._tamanho_vocab, device=self.device)
+    for token, count in token_counts.items():
+        if token in vocab:
+            values[vocab.index(token)] = count
+    if self._se_imprime
+
+```
+
+
+***
+
+**Human:**
+Queria passar o device chamando torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+***
+
+**Assistant:**
+
+Entendi, você pode incluir o parâmetro `device` no `__init__` da classe `BagofWordsSearcher` da seguinte forma:
+
+```
+import torch
+
+class BagofWordsSearcher:
+    def __init__(self, docs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), parm_se_imprime:bool=True):
+        """
+        Inicializa a classe BagofWordsSearcher.
+
+        Args:
+            docs (dict): um dicionário com os documentos a serem indexados.
+            device (torch.device): o dispositivo (cpu ou gpu) em que os tensores serão criados.
+            parm_se_imprime (bool, optional): indica se os passos do processamento serão impressos. Defaults to True.
+        """
+        self.vocab = None
+        self.docs = docs
+        self.device = device
+        self._se_imprime = parm_se_imprime
+        self._create_index()
+        
+      
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self.vocab = {self.vocab}")        
+        self._tamanho_vocab = len(self.vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self.tamanho_vocab = {self.tamanho_vocab}")          
+        return torch.stack([self._numericaliza(doc["tokens"], self.vocab) for doc in self.docs.values()]).to(self.device)
+
+    def search(self, query: str):
+        query_tensor = self._numericaliza(query.split(), self.vocab)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens, vocab):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [vocab.index(token) for token in token_counts.keys() if token in vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(self._tamanho_vocab, device=self.device)
+        for token, count in token_counts.items():
+            if token in vocab:
+                values[vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+```
+
+Dessa forma, a criação dos tensores será realizada no dispositivo passado como argumento (GPU ou CPU). Além disso, o método `_numericaliza` também recebe o parâmetro `device` para criar o tensor `values` no dispositivo correto.
+
+
+***
+
+**Human:**
+Estou usando o código abaixo:
+class BagofWordsSearcher:
+    def __init__(self, docs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), parm_se_imprime:bool=True):
+        self._se_imprime = parm_se_imprime
+        self.vocab = None
+        self.docs = docs
+        self._device = device
+        if self._se_imprime:
+            print(f"Em __init__: self._device = {self._device}")             
+            print(f"Em __init__: len(self.docs) = {len(self.docs)}")             
+        self._create_index()
+        
+      
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self.vocab = {self.vocab}")        
+        self._tamanho_vocab = len(self.vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self._tamanho_vocab = {self._tamanho_vocab}")          
+        self.index = torch.stack([self._numericaliza(doc["tokens"]) for doc in self.docs.values()]).to(self._device)
+        if self._se_imprime:
+            print(f"Em _create_index: self.index = {self.index}")          
+
+    def search(self, query: list):
+        query_tensor = self._numericaliza(query)
+        relevant_docs = []
+        for i, doc_tensor in enumerate(self.index):
+            if torch.all(doc_tensor == query_tensor):
+                relevant_docs.append(i+1)
+        return relevant_docs
+
+    def _numericaliza(self, tokens):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [self.vocab.index(token) for token in token_counts.keys() if token in self.vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(self._tamanho_vocab, device=self._device)
+        for token, count in token_counts.items():
+            if token in self.vocab:
+                values[self.vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+
+O método search não está retornando nenhum documento.
+Ela deve retornar a que tem o menor produto vetorial com os índices.
+Preciso que você gere novamente usando o método search usando multiplicação de tensores: query pela transposta de self.index
+
+***
+
+**Assistant:**
+
+Para fazer a busca usando multiplicação de tensores, precisamos primeiro transformar a query em um tensor, adicionando uma dimensão usando o método `unsqueeze`, e depois transformar o resultado da busca em um tensor também usando `torch.tensor`.
+
+Também precisamos garantir que a query esteja no mesmo dispositivo (CPU ou GPU) que o índice. Para isso, vamos mover a query para o mesmo dispositivo usando o método `to`.
+
+Veja como ficaria a implementação do método `search` usando multiplicação de tensores:
+
+```
+def search(self, query: list):
+    query_tensor = self._numericaliza(query).unsqueeze(0).to(self._device)
+    sims = self.index.matmul(query_tensor.t())
+    relevant_docs = torch.nonzero(sims == sims.max()).squeeze().tolist()
+    return relevant_docs
+
+```
+
+O método `matmul` é usado para multiplicar as matrizes. O resultado é uma matriz com as similaridades entre cada documento e a query. Para encontrar os documentos mais relevantes, usamos `torch.nonzero` para obter os índices dos valores máximos e `squeeze` para remover as dimensões adicionais do tensor.
+
+Lembre-se de atualizar o tipo de retorno da função na docstring.
+
+
+***
+
+**Human:**
+além de retornar o índice dos documentos, preciso que retorne no formato de lista, em que cada elemento será uma lista com índice do documento e o resultado do produto vetorial entre o tensor da query e o tensor do documento
+
+***
+
+**Assistant:**
+
+Entendi, você quer retornar uma lista em que cada elemento é uma lista contendo o índice do documento e o resultado do produto vetorial entre o tensor da query e o tensor do documento correspondente. Você pode modificar o método `search()` para retornar essa lista da seguinte forma:
+
+```
+def search(self, query: list):
+    query_tensor = self._numericaliza(query)
+    results = []
+    for i, doc_tensor in enumerate(self.index):
+        prod = torch.dot(query_tensor, doc_tensor)
+        results.append([i+1, prod.item()])
+    results.sort(key=lambda x: x[1], reverse=True)
+    return results
+
+```
+
+Nesse método, a lista `results` é inicializada como uma lista vazia. Em seguida, o loop percorre todos os documentos no índice, e para cada documento, calcula o produto vetorial entre o tensor da query e o tensor do documento, usando a função `torch.dot()`. O resultado é armazenado em uma lista, juntamente com o índice do documento (incrementado em 1, para que comece em 1 em vez de 0). Ao final do loop, a lista é ordenada em ordem decrescente de acordo com o resultado do produto vetorial, usando a função `sort()` com a opção `reverse=True`. Por fim, a lista é retornada.
+
+Lembre-se de que o método `search()` espera uma lista como argumento, portanto, se você deseja buscar por uma única palavra, deve passá-la como uma lista com um único elemento, por exemplo, `search(["word"])`.
+
+
+***
+
+**Human:**
+mas quero ele mais eficiente, com matmul
+
+***
+
+**Assistant:**
+
+Certo, para tornar o método de busca mais eficiente, podemos usar a função `torch.matmul()` ao invés de percorrer os índices manualmente.
+
+Podemos fazer o produto matricial entre a query e o índice transposto, e obter assim um tensor de similaridades. Cada linha desse tensor representará as similaridades entre a query e cada documento.
+
+Para retornar os resultados como listas, podemos usar a função `tolist()` do tensor para converter os valores em listas. Podemos então criar uma lista de tuplas, onde cada tupla contém o índice do documento e a sua similaridade com a query.
+
+Aqui está o código atualizado:
+
+```
+class BagofWordsSearcher:
+    def __init__(self, docs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), parm_se_imprime:bool=True):
+        self._se_imprime = parm_se_imprime
+        self.vocab = None
+        self.docs = docs
+        self._device = device
+        if self._se_imprime:
+            print(f"Em __init__: self._device = {self._device}")             
+            print(f"Em __init__: len(self.docs) = {len(self.docs)}")             
+        self._create_index()
+        
+      
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self.vocab = {self.vocab}")        
+        self._tamanho_vocab = len(self.vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self._tamanho_vocab = {self._tamanho_vocab}")          
+        self.index = torch.stack([self._numericaliza(doc["tokens"]) for doc in self.docs.values()]).to(self._device)
+        if self._se_imprime:
+            print(f"Em _create_index: self.index = {self.index}")          
+
+    def search(self, query: list):
+        query_tensor = self._numericaliza(query)
+        similarities = torch.matmul(query_tensor, self.index.T)
+        result = [(i+1, s) for i, s in enumerate(similarities.tolist())]
+        return result
+
+    def _numericaliza(self, tokens):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [self.vocab.index(token) for token in token_counts.keys() if token in self.vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(self._tamanho_vocab, device=self._device)
+        for token, count in token_counts.items():
+            if token in self.vocab:
+                values[self.vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+```
+
+Teste o código e veja se atende às suas necessidades.
+
+
+***
+
+**Human:**
+favor gerar apenas o método search mas com um ajuste. Preciso retornar relevant_docs que seria o results ordenado de forma decrescente pela similaridade.
+
+***
+
+**Assistant:**
+
+Claro, aqui está o método `search` ajustado para retornar `relevant_docs` em ordem decrescente de similaridade:
+
+```
+def search(self, query: list):
+    query_tensor = self._numericaliza(query)
+    results = []
+    for i, doc_tensor in enumerate(self.index):
+        similarity = torch.matmul(query_tensor, doc_tensor.T)
+        results.append([i+1, similarity.item()])
+    relevant_docs = sorted(results, key=lambda x: x[1], reverse=True)
+    return relevant_docs
+
+```
+
+Nessa nova versão, criamos uma lista chamada `results` onde armazenamos os índices dos documentos e a similaridade do produto vetorial entre a query e o documento. Em seguida, usamos a função `sorted` para ordenar `results` em ordem decrescente de similaridade e armazenamos o resultado na lista `relevant_docs`, que é retornada pelo método. Note que usamos a função `item()` para converter a similaridade de um tensor para um número real, facilitando a ordenação.
+
+
+***
+
+**Human:**
+favor gerar search novamente mas criando o vetor relevant_docs direto do tensor similarities, sem necessidade do results. Segue o código a corrigir     def search(self, query: list):
+        query_tensor = self._numericaliza(query).unsqueeze(0).to(self._device)
+        if self._se_imprime:
+            print(f"Em search: query_tensor = {query_tensor}")          
+        similarities = torch.matmul(query_tensor, self.index.T)
+        if self._se_imprime:
+            print(f"Em search: similarities = {similarities}")          
+        result = [(i+1, s) for i, s in enumerate(similarities.tolist())]
+        if self._se_imprime:
+            print(f"Em search: result = {result}")          
+        relevant_docs = sorted(result, key=lambda x: x[1], reverse=True)
+        if self._se_imprime:
+            print(f"Em search: relevant_docs = {relevant_docs}")          
+        return relevant_docs
+
+***
+
+**Assistant:**
+
+Segue o método `search` atualizado com as modificações solicitadas:
+
+```
+def search(self, query: list):
+    query_tensor = self._numericaliza(query).unsqueeze(0).to(self._device)
+    if self._se_imprime:
+        print(f"Em search: query_tensor = {query_tensor}")
+    similarities = torch.matmul(query_tensor, self.index.T).squeeze(0)
+    if self._se_imprime:
+        print(f"Em search: similarities = {similarities}")
+    relevant_docs = [(i+1, s) for i, s in enumerate(similarities.tolist())]
+    if self._se_imprime:
+        print(f"Em search: relevant_docs = {relevant_docs}")
+    relevant_docs = sorted(relevant_docs, key=lambda x: x[1], reverse=True)
+    if self._se_imprime:
+        print(f"Em search: relevant_docs = {relevant_docs}")
+    return relevant_docs
+
+```
+
+Nesta versão, o vetor `relevant_docs` é criado a partir do resultado da multiplicação matricial `similarities`. O método `squeeze` é utilizado para remover a dimensão de tamanho 1 do tensor resultante da multiplicação. Em seguida, é criada a lista `relevant_docs` diretamente a partir do tensor `similarities`, sem a necessidade de criar a lista `result` anteriormente. Por fim, a lista `relevant_docs` é ordenada pela similaridade em ordem decrescente.
+
+
+***
+
+**Human:**
+preciso tirar as dimensões do tensor similarities. qual o comando?
+
+***
+
+**Assistant:**
+
+Você pode usar o método `squeeze()` para remover as dimensões com tamanho igual a 1. Se você quiser remover todas as dimensões com tamanho igual a 1, pode passar o argumento `dim=None` para o método `squeeze()`. Por exemplo:
+
+```
+similarities = similarities.squeeze(dim=None)
+
+```
+
+Isso irá retornar um tensor com as mesmas informações de `similarities`, mas sem as dimensões com tamanho igual a 1.
+
+
+***
+
+**Human:**
+deu erro RuntimeError: Please look up dimensions by name, got: name = None.
+
+***
+
+**Assistant:**
+
+O erro `RuntimeError: Please look up dimensions by name, got: name = None` ocorre quando uma operação que requer acesso às dimensões de um tensor é chamada sem especificar o nome da dimensão desejada. Isso pode acontecer quando o tensor tem mais de uma dimensão e a operação não pode inferir qual dimensão é a desejada.
+
+Para evitar o erro, verifique se todas as operações que exigem acesso às dimensões do tensor estão especificando a dimensão correta. Se você não souber qual é a dimensão correta, verifique a documentação da função ou método que está sendo usado para obter informações sobre como especificar a dimensão.
+
+
+***
+
+**Human:**
+como corrigir no squeeze?
+
+***
+
+**Assistant:**
+
+Para corrigir o erro, você precisa passar o nome da dimensão que deseja remover para o parâmetro `dim` da função `squeeze()`. Como você deseja remover a dimensão 0, que tem tamanho 1, você pode simplesmente usar `squeeze(dim=0)` para remover essa dimensão do tensor. O código corrigido ficaria assim:
+
+```
+def search(self, query: list):
+    query_tensor = self._numericaliza(query).unsqueeze(0).to(self._device)
+    if self._se_imprime:
+        print(f"Em search: query_tensor = {query_tensor}")          
+    similarities = torch.matmul(query_tensor, self.index.T).squeeze(dim=0)
+    if self._se_imprime:
+        print(f"Em search: similarities = {similarities}")          
+    relevant_docs = sorted(enumerate(similarities.tolist(), start=1), key=lambda x: x[1], reverse=True)
+    if self._se_imprime:
+        print(f"Em search: relevant_docs = {relevant_docs}")          
+    return relevant_docs
+
+```
+
+Note que eu usei `enumerate()` com `start=1` para começar a contagem dos índices em 1, como você queria na saída. Além disso, eu removi a criação da lista `result` e criei a lista `relevant_docs` diretamente com `enumerate()` e `sort()`.
+
+
+***
+
+**Human:**
+Estou usando o código abaixo:
+class BagofWordsSearcher:
+    def __init__(self, docs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), parm_se_imprime:bool=True):
+        self._se_imprime = parm_se_imprime
+        self.vocab = None
+        self.docs = docs
+        self._device = device
+        if self._se_imprime:
+            print(f"Em __init__: self._device = {self._device}")             
+            print(f"Em __init__: len(self.docs) = {len(self.docs)}")             
+        self._create_index()
+        
+      
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self.vocab = {self.vocab}")        
+        self._tamanho_vocab = len(self.vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self._tamanho_vocab = {self._tamanho_vocab}")          
+        self.index = torch.stack([self._numericaliza(doc["tokens"]) for doc in self.docs.values()]).to(self._device)
+        if self._se_imprime:
+            print(f"Em _create_index: self.index = {self.index}")          
+
+    def search(self, query: list):
+        query_tensor = self._numericaliza(query).unsqueeze(0).to(self._device)
+        if self._se_imprime:
+            print(f"Em search: query_tensor = {query_tensor}")          
+        similarities = torch.matmul(query_tensor, self.index.T).squeeze(dim=0)
+        if self._se_imprime:
+            print(f"Em search: similarities = {similarities}")
+        result = [(i+1, s) for i, s in enumerate(similarities.tolist())]  
+        if self._se_imprime:
+            print(f"Em search: result = {result}")                                  
+        relevant_docs = sorted(result, key=lambda x: x[1], reverse=True)
+        if self._se_imprime:
+            print(f"Em search: relevant_docs = {relevant_docs}")          
+        return relevant_docs
+
+    def _numericaliza(self, tokens):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [self.vocab.index(token) for token in token_counts.keys() if token in self.vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(self._tamanho_vocab, device=self._device)
+        for token, count in token_counts.items():
+            if token in self.vocab:
+                values[self.vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+
+E chamando assim:
+
+bow_searcher = BagofWordsSearcher(documentos_prep_test)
+
+preciso retornar no search na realidade o id dos documentos, que estão em topics_prep_test.keys()
+
+Favor ajustar o código.
+
+***
+
+**Assistant:**
+
+Claro, para retornar os IDs dos documentos, podemos modificar o método `search()` para retornar uma lista de tuplas contendo o ID do documento e a pontuação de similaridade correspondente. A seguir, segue o código atualizado:
+
+```
+class BagofWordsSearcher:
+    def __init__(self, docs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), parm_se_imprime:bool=True):
+        self._se_imprime = parm_se_imprime
+        self.vocab = None
+        self.docs = docs
+        self._device = device
+        if self._se_imprime:
+            print(f"Em __init__: self._device = {self._device}")             
+            print(f"Em __init__: len(self.docs) = {len(self.docs)}")             
+        self._create_index()
+        
+      
+    def _create_index(self):
+        vocab = set()
+        for doc in self.docs.values():
+            vocab.update(set(doc['tokens']))
+        self.vocab = list(vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self.vocab = {self.vocab}")        
+        self._tamanho_vocab = len(self.vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self._tamanho_vocab = {self._tamanho_vocab}")          
+        self.index = torch.stack([self._numericaliza(doc["tokens"]) for doc in self.docs.values()]).to(self._device)
+        if self._se_imprime:
+            print(f"Em _create_index: self.index = {self.index}")          
+
+    def search(self, query: list):
+        query_tensor = self._numericaliza(query).unsqueeze(0).to(self._device)
+        if self._se_imprime:
+            print(f"Em search: query_tensor = {query_tensor}")          
+        similarities = torch.matmul(query_tensor, self.index.T).squeeze(dim=0)
+        if self._se_imprime:
+            print(f"Em search: similarities = {similarities}")
+        result = [(id_doc, s) for id_doc, s in zip(self.docs.keys(), similarities.tolist())]  
+        if self._se_imprime:
+            print(f"Em search: result = {result}")                                  
+        relevant_docs = sorted(result, key=lambda x: x[1], reverse=True)
+        if self._se_imprime:
+            print(f"Em search: relevant_docs = {relevant_docs}")          
+        return relevant_docs
+
+    def _numericaliza(self, tokens):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [self.vocab.index(token) for token in token_counts.keys() if token in self.vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(self._tamanho_vocab, device=self._device)
+        for token, count in token_counts.items():
+            if token in self.vocab:
+                values[self.vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+```
+
+Para utilizar a classe, você pode instanciá-la da seguinte forma:
+
+```
+bow_searcher = BagofWordsSearcher(documentos_prep_test)
+resultados = bow_searcher.search(query)
+for doc_id, score in resultados:
+    print(f"Documento: {doc_id}, Score: {score}")
+
+```
+
+Observe que `documentos_prep_test` é um dicionário contendo os documentos indexados, e
+
+
+***
+
+**Human:**
+mas o resultado está trazendo o índice do documento e não o id do documento. Favor ajustar.
+
+***
+
+**Assistant:**
+
+Claro! Vamos fazer a seguinte modificação na função `_create_index()`:
+
+```
+def _create_index(self):
+    vocab = set()
+    doc_ids = []
+    for doc_id, doc in self.docs.items():
+        vocab.update(set(doc['tokens']))
+        doc_ids.append(doc_id)
+    self.vocab = list(vocab)
+    self._tamanho_vocab = len(self.vocab)
+    self.index = torch.stack([self._numericaliza(doc["tokens"]) for doc in self.docs.values()]).to(self._device)
+    self.doc_ids = doc_ids
+
+```
+
+Adicionamos uma lista `doc_ids` e atualizamos o loop para incluir os ids dos documentos. Em seguida, adicionamos um novo atributo `doc_ids` à classe. Esse atributo contém a lista de ids dos documentos na mesma ordem que o tensor `index`.
+
+Agora, podemos modificar a função `search()` para retornar o id do documento em vez do índice:
+
+```
+def search(self, query: list):
+    query_tensor = self._numericaliza(query).unsqueeze(0).to(self._device)
+    similarities = torch.matmul(query_tensor, self.index.T).squeeze(dim=0)
+    result = [(self.doc_ids[i], s) for i, s in enumerate(similarities.tolist())]  
+    relevant_docs = sorted(result, key=lambda x: x[1], reverse=True)
+    return relevant_docs
+
+```
+
+Fizemos a modificação na linha 4 para incluir o id do documento em vez do índice e a lista `doc_ids` é usada para recuperar o id correto.
+
+
+***
+
+**Human:**
+Dado o código abaixo:
+
+class BagofWordsSearcher:
+    def __init__(self, docs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), parm_se_imprime:bool=True):
+        self._se_imprime = parm_se_imprime
+        self.vocab = None
+        self.docs = docs
+        self._device = device
+        if self._se_imprime:
+            print(f"Em __init__: self._device = {self._device}")             
+            print(f"Em __init__: len(self.docs) = {len(self.docs)}")             
+        self._create_index()
+        
+      
+    def _create_index(self):
+        vocab = set()
+        doc_ids = []
+        for doc_id, doc in self.docs.items():
+            vocab.update(set(doc['tokens']))
+            doc_ids.append(doc_id)
+        self.vocab = list(vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self.vocab = {self.vocab}")        
+        self._doc_ids = doc_ids
+        if self._se_imprime:
+            print(f"Em _create_index: self._doc_ids = {self._doc_ids}")        
+        self._tamanho_vocab = len(self.vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self._tamanho_vocab = {self._tamanho_vocab}")          
+        self.index = torch.stack([self._numericaliza(doc["tokens"]) for doc in self.docs.values()]).to(self._device)
+        if self._se_imprime:
+            print(f"Em _create_index: self.index = {self.index}")          
+
+
+    def search(self, query: list):
+        query_tensor = self._numericaliza(query).unsqueeze(0).to(self._device)
+        if self._se_imprime:
+            print(f"Em search: query_tensor = {query_tensor}")          
+        similarities = torch.matmul(query_tensor, self.index.T).squeeze(dim=0)
+        if self._se_imprime:
+            print(f"Em search: similarities = {similarities}")
+        result = [(self._doc_ids[i], s) for i, s in enumerate(similarities.tolist())]  
+        if self._se_imprime:
+            print(f"Em search: result = {result}")                                  
+        relevant_docs = sorted(result, key=lambda x: x[1], reverse=True)
+        if self._se_imprime:
+            print(f"Em search: relevant_docs = {relevant_docs}")          
+        return relevant_docs
+
+    def _numericaliza(self, tokens):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [self.vocab.index(token) for token in token_counts.keys() if token in self.vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(self._tamanho_vocab, device=self._device)
+        for token, count in token_counts.items():
+            if token in self.vocab:
+                values[self.vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+
+favor documentar o código com docstring e antes de cada linha de código
+
+***
+
+**Assistant:**
+
+Claro, segue o código documentado:
+
+```
+import torch
+from collections import Counter
+
+class BagofWordsSearcher:
+    """
+    Classe responsável por criar um índice invertido de tokens de um conjunto de documentos
+    e realizar busca baseada na similaridade entre o índice e uma consulta de busca.
+
+    Parâmetros
+    ----------
+    docs : dict
+        Um dicionário onde as chaves são identificadores únicos para cada documento e os valores
+        são outros dicionários contendo informações sobre os documentos, como tokens e outras
+        informações relevantes.
+    device : torch.device, opcional
+        O dispositivo (CPU ou GPU) em que o índice invertido e os tensores relacionados serão alocados.
+        O valor padrão é "cuda" se o PyTorch detectar que uma GPU está disponível e "cpu" caso contrário.
+    parm_se_imprime : bool, opcional
+        Um parâmetro para controlar se mensagens de depuração devem ser impressas durante a execução
+        da classe. O valor padrão é True, ou seja, as mensagens serão impressas.
+
+    Atributos
+    ---------
+    vocab : list
+        Uma lista contendo todos os tokens únicos encontrados em todos os documentos.
+    docs : dict
+        O mesmo dicionário passado como entrada no construtor.
+    _device : torch.device
+        O dispositivo em que o índice invertido e os tensores relacionados serão alocados.
+    _doc_ids : list
+        Uma lista de identificadores únicos de documentos, na mesma ordem que o tensor "index".
+    _tamanho_vocab : int
+        O número total de tokens únicos encontrados em todos os documentos.
+    index : torch.Tensor
+        Um tensor de tamanho (num_docs, num_tokens), onde cada linha representa um documento e cada
+        coluna representa um token, indicando quantas vezes o token aparece no documento.
+
+    Métodos
+    -------
+    _create_index()
+        Cria o índice invertido e armazena os resultados em "vocab", "_doc_ids", "_tamanho_vocab" e
+        "index".
+    _numericaliza(tokens)
+        Converte uma lista de tokens em um tensor representando a contagem de ocorrências de cada
+        token na lista, em relação ao vocabulário geral.
+    search(query)
+        Realiza uma busca baseada na similaridade entre o tensor de contagem de tokens da consulta e
+        o tensor de contagem de tokens de todos os documentos. Retorna uma lista de tuplas contendo
+        o identificador de cada documento e a medida de similaridade entre a consulta e o documento,
+        em ordem decrescente de similaridade.
+
+    Exemplos
+    --------
+    >>> docs = {
+    ...     "doc1": {"tokens": ["foo", "bar", "baz"]},
+    ...     "doc2": {"tokens": ["foo", "foo", "bar", "qux"]},
+    ...     "doc3": {"tokens": ["baz", "qux", "quux"]}
+    ... }
+    >>> bws = BagofWordsSearcher(docs)
+    >>> bws.search(["foo", "bar"])
+    [("doc2", 2.0), ("doc1", 1.0), ("doc3", 0.0)]
+    """
+
+    def __init__(self, docs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), parm_se_imprime:bool=True):
+        """
+        Construtor da classe Bag
+
+```
+
+
+***
+
+**Human:**
+A geração foi interrompida. Favor continuar a partir de  do método __init__
+
+***
+
+**Assistant:**
+
+Claro, aqui está a documentação completa com as linhas de código do método `__init__`:
+
+```
+class BagofWordsSearcher:
+    def __init__(self, docs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), parm_se_imprime:bool=True):
+        """
+        Construtor da classe BagofWordsSearcher.
+
+        Args:
+            docs (dict): Um dicionário contendo os documentos a serem indexados.
+            device (torch.device, optional): Dispositivo onde o índice será armazenado (GPU ou CPU).
+                                              O padrão é 'cuda' se uma GPU estiver disponível, caso contrário 'cpu'.
+            parm_se_imprime (bool, optional): Indica se informações de depuração devem ser impressas durante a execução.
+                                              O padrão é True.
+
+        Attributes:
+            _se_imprime (bool): Indica se informações de depuração devem ser impressas durante a execução.
+            vocab (list): Lista de palavras únicas encontradas nos documentos.
+            docs (dict): Dicionário contendo os documentos a serem indexados.
+            _device (torch.device): Dispositivo onde o índice será armazenado (GPU ou CPU).
+            _doc_ids (list): Lista com os IDs dos documentos.
+            _tamanho_vocab (int): Quantidade de palavras únicas encontradas nos documentos.
+            index (torch.Tensor): Matriz onde cada linha representa um documento e cada coluna representa a contagem
+                                  de uma palavra única.
+        """
+        self._se_imprime = parm_se_imprime
+        self.vocab = None
+        self.docs = docs
+        self._device = device
+
+        # Imprime informações de depuração, se necessário
+        if self._se_imprime:
+            print(f"Em __init__: self._device = {self._device}")
+            print(f"Em __init__: len(self.docs) = {len(self.docs)}")
+
+        # Cria o índice
+        self._create_index()
+
+```
+
+Com essa documentação, fica mais fácil entender a função do construtor da classe, seus argumentos e atributos, além de oferecer informações importantes para quem for utilizá-la e/ou fazer manutenção no código.
+
+
+***
+
+**Human:**
+favor documentar os outros métodos da classe também: com docstring e antes de cada linha de código.
+
+***
+
+**Assistant:**
+
+Claro, aqui está a documentação completa da classe `BagofWordsSearcher`:
+
+```
+class BagofWordsSearcher:
+    """
+    Classe para indexação e busca de documentos usando Bag of Words (BoW).
+
+    Args:
+        docs (dict): Dicionário com documentos e seus respectivos tokens.
+                     Cada documento é uma entrada do dicionário,
+                     com o valor sendo um dicionário com a chave 'tokens'
+                     e o valor sendo uma lista de tokens do documento.
+                     Exemplo: {'doc1': {'tokens': ['hello', 'world']},
+                               'doc2': {'tokens': ['world', 'foo', 'bar']}}
+        device (torch.device): Dispositivo a ser usado para cálculos (padrão: 'cuda' se disponível, caso contrário, 'cpu').
+        parm_se_imprime (bool): Indica se as informações de debug devem ser impressas (padrão: True).
+
+    Atributos:
+        vocab (list): Lista com o vocabulário criado a partir dos documentos.
+        docs (dict): Dicionário com documentos e seus respectivos tokens.
+        _device (torch.device): Dispositivo a ser usado para cálculos.
+        _doc_ids (list): Lista com os IDs dos documentos na mesma ordem em que foram indexados.
+        _tamanho_vocab (int): Tamanho do vocabulário.
+        index (torch.Tensor): Tensor com o índice BoW criado a partir dos documentos indexados.
+
+    Métodos:
+        _create_index(self): Cria o índice BoW a partir dos documentos.
+        _numericaliza(self, tokens): Converte uma lista de tokens em um tensor BoW.
+        search(self, query): Realiza uma busca por documentos que correspondem à query.
+
+    Exemplo de uso:
+        docs = {'doc1': {'tokens': ['hello', 'world']},
+                'doc2': {'tokens': ['world', 'foo', 'bar']}}
+        searcher = BagofWordsSearcher(docs)
+        resultados = searcher.search(['hello'])
+    """
+
+    def __init__(self, docs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), parm_se_imprime:bool=True):
+        """
+        Inicializa a classe.
+
+        Args:
+            docs (dict): Dicionário com documentos e seus respectivos tokens.
+                         Cada documento é uma entrada do dicionário,
+                         com o valor sendo um dicionário com a chave 'tokens'
+                         e o valor sendo uma lista de tokens do documento.
+                         Exemplo: {'doc1': {'tokens': ['hello', 'world']},
+                                   'doc2': {'tokens': ['world', 'foo', 'bar']}}
+            device (torch.device): Dispositivo a ser usado para cálculos (padrão: 'cuda' se disponível, caso contrário, 'cpu').
+            parm_se_imprime (bool): Indica se as informações de debug devem ser impressas (padrão: True).
+        """
+        self._se_imprime = parm_se_imprime
+        self.vocab = None
+        self.docs = docs
+        self._device = device
+        if self._se_imprime:
+            print(f"Em __init__: self._device = {self._device}")             
+            print(f"Em __init__: len(self.docs) = {len(self.docs)}")             
+        self._create_index()
+
+    def _create_index(self):
+        """
+        Cria o índice BoW a partir dos documentos.
+        """
+        vocab = set()
+        doc_ids = []
+        for doc_id, doc in
+
+```
+
+
+***
+
+**Human:**
+Seu código parou no meio. Favor gerar de novo a partir de _create_index. Favor colocar comentário antes de cada linha de código também.
+
+***
+
+**Assistant:**
+
+Claro, aqui está o código completo com comentários e docstrings antes de cada método:
+
+```
+import torch
+from collections import Counter
+
+class BagofWordsSearcher:
+    """
+    Classe para criar e buscar em um índice de bag of words.
+    """
+    def __init__(self, docs, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'), parm_se_imprime:bool=True):
+        """
+        Constrói um índice de bag of words a partir de um conjunto de documentos.
+
+        Args:
+            docs (dict): Um dicionário de documentos, onde as chaves são os ids dos documentos e os valores são os tokens do documento.
+            device (torch.device, optional): O dispositivo de processamento (cpu ou gpu). Padrão é 'cuda' se disponível, senão 'cpu'.
+            parm_se_imprime (bool, optional): Se True, imprimirá informações úteis durante a criação do índice. Padrão é True.
+        """
+        self._se_imprime = parm_se_imprime
+        self.vocab = None
+        self.docs = docs
+        self._device = device
+        if self._se_imprime:
+            print(f"Em __init__: self._device = {self._device}")
+            print(f"Em __init__: len(self.docs) = {len(self.docs)}")
+        self._create_index()
+    
+    def _create_index(self):
+        """
+        Cria o índice de bag of words a partir dos documentos fornecidos.
+
+        Para cada documento, extrai seus tokens e os adiciona ao vocabulário. Em seguida, numeraiza os tokens de cada documento
+        em relação ao vocabulário e armazena a numeração em um tensor. Finalmente, armazena todos os tensores em um único tensor
+        indexado pelos ids dos documentos.
+        """
+        vocab = set()
+        doc_ids = []
+        # Para cada documento, adiciona seus tokens ao vocabulário e armazena seu id.
+        for doc_id, doc in self.docs.items():
+            vocab.update(set(doc['tokens']))
+            doc_ids.append(doc_id)
+        # Converte o vocabulário para uma lista e armazena seus tamanhos.
+        self.vocab = list(vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self.vocab = {self.vocab}")
+        self._doc_ids = doc_ids
+        if self._se_imprime:
+            print(f"Em _create_index: self._doc_ids = {self._doc_ids}")
+        self._tamanho_vocab = len(self.vocab)
+        if self._se_imprime:
+            print(f"Em _create_index: self._tamanho_vocab = {self._tamanho_vocab}")
+        # Numeriza os tokens de cada documento em relação ao vocabulário e armazena a numeração em um tensor.
+        self.index = torch.stack([self._numericaliza(doc["tokens"]) for doc in self.docs.values()]).to(self._device)
+        if self._se_imprime:
+            print(f"Em _create_index: self.index = {self.index}")
+    
+    def search(self, query: list):
+        """
+        Busca documentos no índice de bag of words a partir de uma query.
+
+        Recebe uma query em forma de lista de tokens, numeraiza esses tokens em relação ao vocabulário e calcula a similaridade
+        entre a query numeraizada e os documentos numeraizados. Retorna os documentos ordenados por similaridade decrescente.
+
+        Args:
+            query (list): A query em forma de lista
+
+```
+
+
+***
+
+**Human:**
+Vou pedir por etapas, método a método. Favor gerar código documentado (docstring e comentário antes da linha de código) do método  _create_index
+
+***
+
+**Assistant:**
+
+Claro! Segue o código do método _create_index documentado:
+
+```
+def _create_index(self):
+    """
+    Cria o índice invertido que representa todos os documentos da classe em um espaço vetorial.
+
+    Cada documento é convertido em um vetor de tokens e, em seguida, um vocabulário é criado a partir de todos os
+    tokens de todos os documentos, sem repetições. A lista de documentos é transformada em uma matriz, onde cada
+    linha representa um documento e cada coluna representa um token do vocabulário. Cada posição da matriz representa
+    a frequência de um token em um documento.
+
+    Essa matriz é criada no dispositivo definido em self._device.
+
+    """
+    # cria o conjunto de vocabulário que representa todos os tokens de todos os documentos, sem repetições
+    vocab = set()
+
+    # cria uma lista que vai conter o id de cada documento
+    doc_ids = []
+
+    # itera por todos os documentos e atualiza vocab com os tokens de cada documento, e doc_ids com o id do documento
+    for doc_id, doc in self.docs.items():
+        vocab.update(set(doc['tokens']))
+        doc_ids.append(doc_id)
+
+    # transforma o conjunto vocab em uma lista, para preservar a ordem dos tokens
+    self.vocab = list(vocab)
+
+    # salva a lista de ids dos documentos
+    self._doc_ids = doc_ids
+
+    # salva o tamanho do vocabulário
+    self._tamanho_vocab = len(self.vocab)
+
+    # cria a matriz index, onde cada linha representa um documento e cada coluna representa um token do vocabulário
+    # a posição (i,j) da matriz representa a frequência do token j no documento i
+    # a matriz é criada no dispositivo definido em self._device
+    self.index = torch.stack([self._numericaliza(doc["tokens"]) for doc in self.docs.values()]).to(self._device)
+
+```
+
+
+***
+
+**Human:**
+idem para o _numericaliza
+
+***
+
+**Assistant:**
+
+Claro! Segue abaixo o código do método `_numericaliza` com comentários e docstrings:
+
+```
+def _numericaliza(self, tokens):
+    """
+    Transforma uma lista de tokens em um tensor com a contagem de ocorrências de cada token na lista.
+
+    Args:
+        tokens (list): lista de tokens.
+
+    Returns:
+        torch.Tensor: tensor com a contagem de ocorrências de cada token na lista.
+    """
+    # Cria um objeto Counter com a contagem de ocorrências de cada token na lista
+    token_counts = Counter(tokens)
+    
+    # Obtém os índices de cada token na lista de vocabulário (se existir)
+    indexes = [self.vocab.index(token) for token in token_counts.keys() if token in self.vocab]
+    
+    # Cria um tensor com zeros, com o mesmo tamanho do vocabulário
+    values = torch.zeros(self._tamanho_vocab, device=self._device)
+    
+    # Para cada token na contagem, atualiza o tensor values na posição correspondente ao índice do token
+    for token, count in token_counts.items():
+        if token in self.vocab:
+            values[self.vocab.index(token)] = count
+    
+    return values
+
+```
+
+Espero ter ajudado!
+
+
+***
+
+**Human:**
+segue o código correto a ser documentado:     def _numericaliza(self, tokens):
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+        indexes = [self.vocab.index(token) for token in token_counts.keys() if token in self.vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+        values = torch.zeros(self._tamanho_vocab, device=self._device)
+        for token, count in token_counts.items():
+            if token in self.vocab:
+                values[self.vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+        return values
+
+***
+
+**Assistant:**
+
+Aqui está o código do método `_numericaliza` documentado:
+
+```
+    def _numericaliza(self, tokens):
+        """
+        Converte uma lista de tokens em um tensor com contagem de palavras.
+
+        Args:
+            tokens (list): Lista de tokens a serem convertidos.
+
+        Returns:
+            torch.Tensor: Tensor com contagem de palavras.
+        """
+        # Contagem dos tokens
+        token_counts = Counter(tokens)
+        if self._se_imprime:
+            print(f"Em _numericaliza: token_counts = {token_counts}")
+            
+        # Obtenção dos índices dos tokens na vocabulário
+        indexes = [self.vocab.index(token) for token in token_counts.keys() if token in self.vocab]
+        if self._se_imprime:
+            print(f"Em _numericaliza: indexes = {indexes}")
+            
+        # Criação do tensor com contagem de palavras
+        values = torch.zeros(self._tamanho_vocab, device=self._device)
+        for token, count in token_counts.items():
+            if token in self.vocab:
+                values[self.vocab.index(token)] = count
+        if self._se_imprime:
+            print(f"Em _numericaliza: values = {values}")
+            
+        return values
+
+```
+
+Este método recebe uma lista de tokens e retorna um tensor com a contagem de palavras para cada token na lista, de acordo com a vocabulário criada pelo método `_create_index`.
+
+
+***
+
+**Human:**
+ótimo. Agora o search
+
+***
+
+**Assistant:**
+
+Claro! Segue o código documentado do método `search`:
+
+```
+def search(self, query: list):
+    """
+    Realiza uma busca por similaridade entre o documento e a query fornecidos. Retorna uma lista de tuplas
+    contendo o id do documento e sua similaridade com a query, ordenada de forma decrescente pela similaridade.
+
+    Parâmetros:
+    -----------
+    query : list
+        Lista de tokens da query.
+
+    Retorno:
+    --------
+    relevant_docs : list
+        Lista de tuplas (id do documento, similaridade) ordenada de forma decrescente pela similaridade.
+    """
+    # Converte a query em um tensor numérico.
+    query_tensor = self._numericaliza(query).unsqueeze(0).to(self._device)
+    
+    if self._se_imprime:
+        print(f"Em search: query_tensor = {query_tensor}")
+        
+    # Calcula a similaridade entre a query e todos os documentos da base de dados.
+    similarities = torch.matmul(query_tensor, self.index.T).squeeze(dim=0)
+    
+    if self._se_imprime:
+        print(f"Em search: similarities = {similarities}")
+    
+    # Gera uma lista de tuplas contendo o id do documento e sua similaridade com a query.
+    result = [(self._doc_ids[i], s) for i, s in enumerate(similarities.tolist())]
+    
+    if self._se_imprime:
+        print(f"Em search: result = {result}")
+        
+    # Ordena a lista de documentos relevantes pela similaridade em ordem decrescente.
+    relevant_docs = sorted(result, key=lambda x: x[1], reverse=True)
+    
+    if self._se_imprime:
+        print(f"Em search: relevant_docs = {relevant_docs}")
+        
+    return relevant_docs
+
+```
+
+
+***
+
+**Human:**
+Dado o código abaixo:
+
+def ndcg_at_k(ranking, relevance, k=10):
+    dcg = 0.0
+    idcg = 0.0
+    for i in range(k):
+        if i &lt; len(ranking):
+            dcg += relevance[ranking[i]] / torch.log2(torch.tensor(i + 2))
+        idcg += relevance[i] / torch.log2(torch.tensor(i + 2))
+    return dcg / idcg
+
+Favor calcular a métrica em um loop chamando bow_searcher.search para todas as queries em topics_com_relevancia_prep.
+
+
+
+***
+
+**Assistant:**
+
+Para calcular a métrica ndcg_at_k para todas as queries em `topics_com_relevancia_prep`, podemos fazer um loop sobre as queries e chamar o método `search` do objeto `bow_searcher` para cada uma delas. Em seguida, usamos os resultados da pesquisa para calcular a relevância dos documentos retornados em relação à query e passamos essas informações para a função `ndcg_at_k`.
+
+Segue o código para realizar essa operação:
+
+```
+k = 10
+
+ndcg_total = 0.0
+for query in topics_com_relevancia_prep:
+    query_text = query[1]
+    relevant_docs = query[2]
+    retrieved_docs = bow_searcher.search(query_text)
+    retrieved_doc_ids = [doc[0] for doc in retrieved_docs]
+    relevance = [1.0 if i in relevant_docs else 0.0 for i in retrieved_doc_ids]
+    ndcg = ndcg_at_k(retrieved_doc_ids, relevance, k)
+    ndcg_total += ndcg
+
+mean_ndcg = ndcg_total / len(topics_com_relevancia_prep)
+print("Mean nDCG@{}: {:.4f}".format(k, mean_ndcg))
+
+```
+
+Nesse código, `k` é o valor de `k` que usamos na função `ndcg_at_k`. Em seguida, usamos um loop para iterar sobre todas as queries em `topics_com_relevancia_prep`. Para cada query, obtemos o texto da query (`query_text`) e a lista de documentos relevantes (`relevant_docs`). Em seguida, chamamos o método `search` do objeto `bow_searcher` para obter a lista de documentos recuperados (`retrieved_docs`). Em seguida, usamos os IDs dos documentos recuperados (`retrieved_doc_ids`) para calcular a relevância dos documentos em relação à query. Por fim, chamamos a função `ndcg_at_k` para calcular a métrica `nDCG@k` para a query e adicionamos o resultado ao total (`ndcg_total`).
+
+No final do loop, dividimos `ndcg_total` pelo número de queries para obter a média da métrica `nDCG@k` para todas as queries em `topics_com_relevancia_prep`.
+
+
+***
+
+**Human:**
+Na realidade, no loop, precisaremos considerar os dois dicts a seguir:
+
+
+topics_prep_test = {
+    301: {'title': 'International Organized Crime', 'tokens': ['international', 'organized', 'crime']},
+    302: {'title': 'Mass Media and Violence', 'tokens': ['mass', 'media' ,'violence']},
+    303: {'title': 'Water Management', 'tokens': ['water', 'management']}
+}
+
+
+# Inicializando qrels
+qrels_test: Dict[str, Dict[int, int]] = {
+    301: {1: 1, 2: 0, 3: 0, 4: 1, 5: 0, 6: 0, 7: 1, 8: 0, 9: 0, 10: 1},
+    302: {1: 0, 2: 1, 3: 0, 4: 0, 5: 1, 6: 0, 7: 0, 8: 1, 9: 0, 10: 0},
+    303: {1: 0, 2: 0, 3: 1, 4: 0, 5: 0, 6: 1, 7: 0, 8: 0, 9: 1, 10: 0}
+}
+
+***
+
+**Assistant:**
+
+Entendi, você gostaria que eu utilize esses dicionários para obter as queries e as relevâncias de cada query, correto? Como o bow_searcher espera uma string como query, precisamos transformar as listas de tokens em strings antes de fazer as buscas. Podemos fazer isso utilizando a função "join". Vou escrever um loop que itera sobre cada tópico, converte a lista de tokens em uma string e realiza a busca usando o bow_searcher. Em seguida, utilizo a métrica ndcg_at_k para calcular a relevância do resultado obtido e imprimir o resultado na tela. Segue o código:
+
+```
+for topic_id, topic in topics_prep_test.items():
+    query = ' '.join(topic['tokens'])
+    results = bow_searcher.search(query)
+    ranking = [int(id) for id, _ in results]
+    relevance = [qrels_test[topic_id][doc_id] for doc_id, _ in results]
+    ndcg = ndcg_at_k(ranking, relevance)
+    print(f"Query {topic_id}: NDCG@10 = {ndcg:.4f}")
+
+```
+
+Note que a função "ndcg_at_k" foi definida anteriormente e estamos utilizando o dicionário qrels_test para obter a relevância de cada documento retornado pela busca para cada query.
+
+
+***
+
+**Human:**
+o search da nossa classe espera uma lista de strings. Pode usar direto a chave tokens
+
+***
+
+**Assistant:**
+
+Certo, no caso, podemos usar a chave 'tokens' do dicionário para obter a lista de strings para passar para o método `search`. Segue abaixo um exemplo de como realizar a busca e calcular a métrica `ndcg@10` para cada query do conjunto de teste:
+
+```
+# Inicializando o search engine
+bow_searcher = BoWSearcher(vocab=vocab, embeddings=embeddings)
+
+# Loop para realizar a busca e calcular a métrica para cada query
+ndcg_scores = []
+for query_id, query in topics_prep_test.items():
+    # Realizando a busca
+    results = bow_searcher.search(query['tokens'])
+
+    # Obtendo as relevâncias da query para os documentos retornados
+    relevances = [qrels_test[query_id][doc_id] for doc_id, _ in results]
+
+    # Obtendo o ranking dos documentos retornados
+    ranking = [doc_id for doc_id, _ in results]
+
+    # Calculando a métrica ndcg@10
+    ndcg_score = ndcg_at_k(ranking, relevances, k=10)
+
+    # Armazenando a métrica para a query atual
+    ndcg_scores.append(ndcg_score)
+
+# Imprimindo a média das métricas ndcg@10 para todas as queries do conjunto de teste
+print(f"Média das métricas ndcg@10 para o conjunto de teste: {torch.mean(torch.tensor(ndcg_scores))}")
+
+```
+
+
+***
+
+**Human:**
+não temos embeddings
+
+***
+
+**Assistant:**
+
+Entendi, nesse caso você pode usar uma matriz de pesos que será utilizada como embeddings. A matriz de pesos pode ser inicializada com valores aleatórios ou pode ser carregada de um arquivo pré-treinado.
+
+No caso da inicialização aleatória, você pode criar uma matriz de tamanho (vocab_size, embedding_dim) onde "vocab_size" é o tamanho do vocabulário (número de palavras únicas no vocabulário) e "embedding_dim" é a dimensão dos embeddings que você deseja usar. Por exemplo, se desejar utilizar embeddings de 100 dimensões, pode criar uma matriz com tamanho (tamanho_vocab, 100).
+
+Você pode inicializar essa matriz usando o método `torch.randn()` para gerar valores aleatórios para os pesos. Por exemplo:
+
+```
+pesos = torch.randn(tamanho_vocab, embedding_dim)
+
+```
+
+Em seguida, você pode passar essa matriz como argumento para o construtor da sua classe, que irá usá-la para criar os embeddings. Por exemplo:
+
+```
+class MinhaClasse:
+    def __init__(self, vocab, pesos):
+        self.vocab = vocab
+        self.pesos = pesos
+        
+    def _numericaliza(self, tokens):
+        indexes = [self.vocab.index(token) for token in tokens if token in self.vocab]
+        values = self.pesos[indexes]
+        return values
+
+```
+
+Se você quiser carregar embeddings pré-treinados de um arquivo, pode usar a função `torch.nn.Embedding.from_pretrained()`. Por exemplo:
+
+```
+pesos_pre_treinados = torch.load("caminho/para/o/arquivo.pt")
+embedding = torch.nn.Embedding.from_pretrained(pesos_pre_treinados, freeze=True)
+
+```
+
+Note que, no caso de embeddings pré-treinados, é importante que os índices no vocabulário correspondam aos índices na matriz de pesos. Portanto, você pode precisar reordenar os índices no seu vocabulário para corresponder aos índices na matriz de pesos.
+
+
+***
+
+**Human:**
+acho que relevances precisa ser qrels_test[query_id] ordernado pelo valor decrescente de relevância
+
+***
+
+**Assistant:**
+
+Certo, você tem razão. O `relevances` deve ser definido como a lista de tuplas `(doc_id, relevancia)` ordenada pela relevância decrescente. Segue abaixo o código corrigido:
+
+```
+for query_id, query in topics_prep_test.items():
+    print(f"Query: {query['title']}")
+    scores = bow_searcher.search(query["tokens"])
+    # obtém as relevâncias para a query atual
+    relevances = qrels_test[query_id]
+    relevances = sorted(relevances.items(), key=lambda x: x[1], reverse=True)
+    # extrai a lista de documentos e a lista de relevâncias
+    ranking = [doc_id for doc_id, _ in scores]
+    relevance = [relevancia for _, relevancia in relevances]
+    # calcula a métrica NDCG@10
+    ndcg = ndcg_at_k(ranking, relevance, k=10)
+    print(f"NDCG@10: {ndcg:.4f}\n")
+
+```
+
+
+***
+
+**Human:**
+tem algum erro no código abaixo:
+
+def ndcg_at_k(ranking_docto, relevance_ordenada, dict_relevancia, k=10):
+    dcg = 0.0
+    idcg = 0.0
+    for i, docto_id in enumerate(ranking_docto):
+        if i &gt; k:
+            break
+        dcg += dict_relevancia[docto_id] / torch.log2(torch.tensor(i + 2))
+        idcg += dict_relevancia[relevance_ordenada[i]] / torch.log2(torch.tensor(i + 2))
+        print(f'i={i}, docto_id={docto_id} dcg={dcg} idcg={idcg}')
+
+    val_metric = dcg / idcg
+    print(f"val_metric = dcg / idcg :: {val_metric} = {dcg} / {idcg}  ")
+    return dcg / idcg
+
+
+ndcg_scores = []
+for query_id, query in topics_prep_test.items():
+    print(f"no cálculo da métrica: query_id={query_id}, query={query}")
+    # Realizando a busca
+    results = bow_searcher.search(query['tokens'])
+    print(f'no cálculo da métrica: results = {results}')
+
+    # obtém as relevâncias para a query atual
+    dict_relevancia = qrels_test[query_id]
+    print(f'no cálculo da métrica: dict_relevancia = {dict_relevancia}')    
+    relevances = [id_docto for id_docto, relevance in sorted(qrels_test[query_id].items(), key=lambda x: x[1], reverse=True)]
+    print(f'no cálculo da métrica: relevances = {relevances}')
+
+    # Obtendo o ranking com o id dos documentos retornados
+    ranking = [par_docid_relevance[0] for par_docid_relevance in results]
+    print(f'no cálculo da métrica: ranking = {ranking}')
+
+    # Calculando a métrica ndcg@10
+    ndcg_score = ndcg_at_k(ranking, relevances, dict_relevancia, k=10)
+    print(f'no cálculo da métrica: ndcg_score = {ndcg_score}')
+
+    # Armazenando a métrica para a query atual
+    ndcg_scores.append(ndcg_score)
+    break
+
+print(f'no cálculo da métrica: ndcg_scores = {ndcg_scores}')
+
+***
+
+**Assistant:**
+
+Sim, há um erro na linha que ordena as relevâncias. Atualmente, ela está ordenando as relevâncias pelo valor decrescente de `qrels_test[query_id]`, que é um dicionário, e não pelo valor de `dict_relevancia`, que é outro dicionário que contém as relevâncias dos documentos retornados para a consulta atual.
+
+Além disso, na chamada para `ndcg_at_k`, você está passando `relevances` como o ranking de documentos ordenado por relevância, em vez de passar a lista de relevâncias ordenada. Isso significa que o ID do documento pode ser passado para `ndcg_at_k` em uma ordem diferente da ordem em que as relevâncias são passadas.
+
+Aqui está uma versão corrigida do código:
+
+```
+ndcg_scores = []
+for query_id, query in topics_prep_test.items():
+    print(f"no cálculo da métrica: query_id={query_id}, query={query}")
+    # Realizando a busca
+    results = bow_searcher.search(query['tokens'])
+    print(f'no cálculo da métrica: results = {results}')
+
+    # obtém as relevâncias para a query atual
+    dict_relevancia = qrels_test[query_id]
+    print(f'no cálculo da métrica: dict_relevancia = {dict_relevancia}')
+    relevances = [dict_relevancia[doc_id] for doc_id in results]
+    print(f'no cálculo da métrica: relevances = {relevances}')
+
+    # Obtendo o ranking com o id dos documentos retornados
+    ranking = [par_docid_relevance[0] for par_docid_relevance in results]
+    print(f'no cálculo da métrica: ranking = {ranking}')
+
+    # ordena as relevâncias em ordem decrescente
+    relevances_ordenada = sorted(dict_relevancia.values(), reverse=True)
+
+    # Calculando a métrica ndcg@10
+    ndcg_score = ndcg_at_k(ranking, relevances_ordenada, dict_relevancia, k=10)
+    print(f'no cálculo da métrica: ndcg_score = {ndcg_score}')
+
+    # Armazenando a métrica para a query atual
+    ndcg_scores.append(ndcg_score)
+
+print(f'no cálculo da métrica: ndcg_scores = {ndcg_scores}')
+
+```
+
+Observe que agora estamos passando a lista `relevances_ordenada` para `ndcg_at_k` em vez de `relevances`, e estamos ordenando as relevâncias usando `dict_relevancia.values()` em vez de `qrels_test[query_id].items()`.
+
+
+***
+
+**Human:**
+def ndcg_at_k(ranking_docto, relevance_ordenada, dict_relevancia, k=10):
+    dcg = 0.0
+    idcg = 0.0
+    for i, docto_id in enumerate(ranking_docto):
+        if i &gt; k:
+            break
+        dcg += dict_relevancia[docto_id] / torch.log2(torch.tensor(i + 2))
+        idcg += dict_relevancia[relevance_ordenada[i]] / torch.log2(torch.tensor(i + 2))
+        print(f'i={i}, docto_id={docto_id} dcg={dcg} idcg={idcg}')
+
+    val_metric = dcg / idcg
+    print(f"val_metric = dcg / idcg :: {val_metric} = {dcg} / {idcg}  ")
+    return dcg / idcg
+
+***
+
+**Assistant:**
+
+Não identifiquei nenhum erro no código apresentado. A função `ndcg_at_k` parece estar correta.
+
+
+***
+
+**Human:**
+e essa: ndcg_scores = []
+for query_id, query in topics_prep_test.items():
+    print(f"no cálculo da métrica: query_id={query_id}, query={query}")
+    # Realizando a busca
+    results = bow_searcher.search(query['tokens'])
+    print(f'no cálculo da métrica: results = {results}')
+
+    # obtém as relevâncias para a query atual
+    dict_relevancia = qrels_test[query_id]
+    print(f'no cálculo da métrica: dict_relevancia = {dict_relevancia}')    
+    relevances = [id_docto for id_docto, relevance in sorted(dict_relevancia.items(), key=lambda x: x[1], reverse=True)]
+    print(f'no cálculo da métrica: relevances = {relevances}')
+
+    # Obtendo o ranking com o id dos documentos retornados
+    ranking = [par_docid_relevance[0] for par_docid_relevance in results]
+    print(f'no cálculo da métrica: ranking = {ranking}')
+
+    # Calculando a métrica ndcg@10
+    ndcg_score = ndcg_at_k(ranking, relevances, dict_relevancia, k=10)
+    print(f'no cálculo da métrica: ndcg_score = {ndcg_score}')
+
+    # Armazenando a métrica para a query atual
+    ndcg_scores.append(ndcg_score)
+    break
+
+print(f'no cálculo da métrica: ndcg_scores = {ndcg_scores}')
+
+***
+
+**Assistant:**
+
+Não há nenhum erro evidente na sua implementação. O código parece estar correto. No entanto, há um comando `break` dentro do loop `for` que interrompe a execução após a primeira iteração, portanto, a métrica será calculada apenas para a primeira consulta. Se o objetivo é calcular a métrica para todas as consultas de teste, o `break` deve ser removido.
+
+
+***
+
+**Human:**
+qual a fórmula da métrica ndcg
+
+***
+
+**Assistant:**
+
+A fórmula da métrica NDCG (Normalized Discounted Cumulative Gain) é dada por:
+
+NDCG@k = DCG@k / IDCG@k
+
+Onde:
+
+- DCG@k é o Ganho Cumulativo Descontado (Discounted Cumulative Gain) para os top-k documentos retornados para a consulta.
+- IDCG@k é o Ganho Cumulativo Descontado Ideal (Ideal Discounted Cumulative Gain) para os top-k documentos, considerando as relevâncias ideais.
+
+
+A fórmula para o DCG@k é:
+
+DCG@k = ∑(i=1 até k) [(2^rel(i) - 1) / log2(i+1)]
+
+Onde rel(i) é a relevância do i-ésimo documento no ranking.
+
+A fórmula para o IDCG@k é obtida a partir do ranking ideal dos documentos, ordenados por relevância, e é calculada da mesma forma que o DCG@k.
+
+
+***
+
+**Human:**
+quanto é  log2(1)
+
+***
+
+**Assistant:**
+
+O logaritmo de 1 em qualquer base é sempre 0, portanto, log2(1) = 0.
+
+
+***
+
+**Human:**
+ajustar a função abaixo para a fórmula indicada: def ndcg_at_k(ranking_docto, relevance_ordenada, dict_relevancia, k=10):
+    dcg = 0.0
+    idcg = 0.0
+    for i, docto_id in enumerate(ranking_docto):
+        if i &gt; k:
+            break
+        dcg += dict_relevancia[docto_id] / torch.log2(torch.tensor(i + 2))
+        idcg += dict_relevancia[relevance_ordenada[i]] / torch.log2(torch.tensor(i + 2))
+        print(f'i={i}, docto_id={docto_id} dcg={dcg} idcg={idcg}')
+
+    val_metric = dcg / idcg
+    print(f"val_metric = dcg / idcg :: {val_metric} = {dcg} / {idcg}  ")
+    return dcg / idcg
+
+***
+
+**Assistant:**
+
+Ajustando a função para a fórmula do ndcg, temos:
+
+```
+def ndcg_at_k(ranking_docto, relevance_ordenada, dict_relevancia, k=10):
+    dcg = 0.0
+    idcg = 0.0
+    for i, docto_id in enumerate(ranking_docto):
+        if i >= k:
+            break
+        rel = dict_relevancia[docto_id]
+        if rel > 0:
+            dcg += (2 ** rel - 1) / torch.log2(torch.tensor(i + 2))
+        rel_idcg = dict_relevancia[relevance_ordenada[i]]
+        if rel_idcg > 0:
+            idcg += (2 ** rel_idcg - 1) / torch.log2(torch.tensor(i + 2))
+        print(f'i={i}, docto_id={docto_id} dcg={dcg} idcg={idcg}')
+
+    val_metric = dcg / idcg if idcg > 0 else 0.0
+    print(f"val_metric = dcg / idcg :: {val_metric} = {dcg} / {idcg}  ")
+    return val_metric
+
+```
+
+Essa é a fórmula do nDCG que calcula a medida de relevância em um ranking ordenado de documentos, utilizando a escala de relevância binária (0 ou 1). A fórmula usa a base 2 do logaritmo e considera uma pontuação de relevância dobrada em relação ao número de posição do documento no ranking, se comparado com a pontuação da posição imediatamente inferior. A ideia é que os documentos mais relevantes tenham maior peso na pontuação final.
+
+
+***
+
+**Human:**
+favor documentar o código com docstring e antes de cada linha
+
+***
+
+**Assistant:**
+
+Claro, segue abaixo o código documentado:
+
+```
+def ndcg_at_k(ranking_docto, relevance_ordenada, dict_relevancia, k=10):
+    """
+    Calcula o valor de nDCG@k para um ranking de documentos retornados.
+
+    Args:
+        ranking_docto (List[int]): Uma lista contendo o ID dos documentos ranqueados.
+        relevance_ordenada (List[int]): Uma lista contendo os ID dos documentos ordenados por relevância.
+        dict_relevancia (Dict[int, int]): Um dicionário contendo os ID dos documentos como chaves e as suas respectivas relevâncias como valores.
+        k (int): O número de documentos considerados no cálculo do nDCG. O padrão é 10.
+
+    Returns:
+        float: O valor do nDCG@k para o ranking de documentos fornecido.
+
+    """
+    # Inicializa o valor do DCG e IDCG
+    dcg = 0.0
+    idcg = 0.0
+
+    # Loop através dos documentos no ranking
+    for i, docto_id in enumerate(ranking_docto):
+        # Se chegamos ao limite k, pare o loop
+        if i >= k:
+            break
+
+        # Adiciona o valor de relevância normalizado pelo logaritmo do rank do documento + 1 ao valor do DCG
+        dcg += dict_relevancia[docto_id] / math.log2(i + 2)
+
+        # Adiciona o valor de relevância normalizado pelo logaritmo do rank do documento + 1 ao valor do IDCG
+        idcg += dict_relevancia[relevance_ordenada[i]] / math.log2(i + 2)
+
+    # Calcula o valor de nDCG@k e retorna
+    ndcg = dcg / idcg if idcg > 0 else 0.0
+    return ndcg
+
+```
+
+
+***
+
+**Human:**
+favor documentar o código com docstring e antes de cada linha da função que segue: def ndcg_at_k(ranking_docto, relevance_ordenada, dict_relevancia, k=10):
+    dcg = 0.0
+    idcg = 0.0
+    for i, docto_id in enumerate(ranking_docto):
+        if i &gt;= k:
+            break
+        rel = dict_relevancia[docto_id]
+        if rel &gt; 0:
+            dcg += (2 ** rel - 1) / torch.log2(torch.tensor(i + 2))
+        rel_idcg = dict_relevancia[relevance_ordenada[i]]
+        if rel_idcg &gt; 0:
+            idcg += (2 ** rel_idcg - 1) / torch.log2(torch.tensor(i + 2))
+        print(f'i={i}, docto_id={docto_id} dcg={dcg} idcg={idcg}')
+
+    val_metric = dcg / idcg if idcg &gt; 0 else 0.0
+    print(f"val_metric = dcg / idcg :: {val_metric} = {dcg} / {idcg}  ")
+    return val_metric
+
+***
+
+**Assistant:**
+
+Aqui está a documentação solicitada para a função `ndcg_at_k`:
+
+```
+def ndcg_at_k(ranking_docto, relevance_ordenada, dict_relevancia, k=10):
+    """
+    Calcula a métrica NDCG@k.
+
+    Args:
+        ranking_docto (list): Lista com o ID dos documentos retornados pela busca.
+        relevance_ordenada (list): Lista com o ID dos documentos relevantes para a consulta, 
+                                   ordenados pela relevância.
+        dict_relevancia (dict): Dicionário que mapeia o ID do documento à sua relevância.
+        k (int): Número de documentos considerados na métrica.
+
+    Returns:
+        float: O valor da métrica NDCG@k para a consulta.
+
+    """
+    dcg = 0.0  # inicializa o valor de dcg como 0
+    idcg = 0.0  # inicializa o valor de idcg como 0
+
+    # percorre o ranking de documentos
+    for i, docto_id in enumerate(ranking_docto):
+        if i >= k:
+            break  # para de processar documentos se já chegou no número k
+
+        # calcula o valor de dcg para o documento atual
+        rel = dict_relevancia[docto_id]  # relevância do documento
+        if rel > 0:
+            dcg += (2 ** rel - 1) / torch.log2(torch.tensor(i + 2))
+
+        # calcula o valor de idcg para o documento atual
+        rel_idcg = dict_relevancia[relevance_ordenada[i]]  # relevância do documento considerado ideal
+        if rel_idcg > 0:
+            idcg += (2 ** rel_idcg - 1) / torch.log2(torch.tensor(i + 2))
+
+        # imprime as informações para depuração
+        print(f'i={i}, docto_id={docto_id} dcg={dcg} idcg={idcg}')
+
+    # calcula o valor final da métrica
+    val_metric = dcg / idcg if idcg > 0 else 0.0
+    print(f"val_metric = dcg / idcg :: {val_metric} = {dcg} / {idcg}  ")
+    return val_metric
+
+```
+
+
+***
+
+**Human:**
+não seria i+1?
+
+***
+
+**Assistant:**
+
+No cálculo do denominador do log2 na fórmula do NDCG, o índice começa em 1. Portanto, o valor de i utilizado como parâmetro para o log2 deve ser incrementado em 1. Então, na linha 7, a expressão deve ser `torch.log2(torch.tensor(i + 1))`.
+
+
+***
+
+**Human:**
+como fica o import de math?
+
+***
+
+**Assistant:**
+
+Para importar o módulo `math` no Python, basta utilizar o seguinte comando:
+
+```
+import math
+
+```
+
+Após importado, você pode utilizar as funções e constantes do módulo utilizando a sintaxe `math.funcao()` ou `math.constante`. Por exemplo:
+
+```
+import math
+
+x = math.sin(math.pi / 2)
+y = math.sqrt(2)
+
+```
+
+Nesse exemplo, a função `sin()` e a constante `pi` são importadas do módulo `math`.
+
+
+***
+
+**Human:**
+Dado o código abaixo e contexto da conversa: 
+ndcg_scores = []
+for query_id, query in topics_prep_test.items():
+    print(f"no cálculo da métrica: query_id={query_id}, query['tokens']={query['tokens']}")
+    # Realizando a busca
+    results = bow_searcher.search(query['tokens'], k=5)
+    print(f'no cálculo da métrica: results = {results}')
+
+    # obtém as relevâncias para a query atual
+    dict_relevancia = qrels_test[query_id]
+    print(f'no cálculo da métrica: dict_relevancia = {dict_relevancia}')    
+    relevances = [id_docto for id_docto, relevance in sorted(dict_relevancia.items(), key=lambda x: x[1], reverse=True)]
+    print(f'no cálculo da métrica: relevances = {relevances}')
+
+    # Obtendo o ranking com o id dos documentos retornados
+    ranking = [par_docid_relevance[0] for par_docid_relevance in results]
+    print(f'no cálculo da métrica: ranking = {ranking}')
+
+    # Calculando a métrica ndcg@10
+    ndcg_score = ndcg_at_k(ranking, relevances, dict_relevancia, k=10)
+    print(f'no cálculo da métrica: ndcg_score = {ndcg_score}')
+
+    # Armazenando a métrica para a query atual
+    ndcg_scores.append(ndcg_score)
+print(f'no cálculo da métrica: ndcg_scores = {ndcg_scores}')
+
+favor retornar em ndcg_scores uma lista contendo cada elemento com uma tupla: (id_query, ndcg)
+
+***
+
+**Assistant:**
+
+Para retornar em `ndcg_scores` uma lista contendo cada elemento com uma tupla `(id_query, ndcg)`, basta alterar o código para adicionar a tupla correspondente à lista em vez do valor de `ndcg_score`. O código ficaria assim:
+
+```
+ndcg_scores = []
+for query_id, query in topics_prep_test.items():
+    print(f"no cálculo da métrica: query_id={query_id}, query['tokens']={query['tokens']}")
+    # Realizando a busca
+    results = bow_searcher.search(query['tokens'], k=5)
+    print(f'no cálculo da métrica: results = {results}')
+
+    # obtém as relevâncias para a query atual
+    dict_relevancia = qrels_test[query_id]
+    print(f'no cálculo da métrica: dict_relevancia = {dict_relevancia}')    
+    relevances = [id_docto for id_docto, relevance in sorted(dict_relevancia.items(), key=lambda x: x[1], reverse=True)]
+    print(f'no cálculo da métrica: relevances = {relevances}')
+
+    # Obtendo o ranking com o id dos documentos retornados
+    ranking = [par_docid_relevance[0] for par_docid_relevance in results]
+    print(f'no cálculo da métrica: ranking = {ranking}')
+
+    # Calculando a métrica ndcg@10
+    ndcg_score = ndcg_at_k(ranking, relevances, dict_relevancia, k=10)
+    print(f'no cálculo da métrica: ndcg_score = {ndcg_score}')
+
+    # Armazenando a métrica para a query atual
+    ndcg_scores.append((query_id, ndcg_score))
+print(f'no cálculo da métrica: ndcg_scores = {ndcg_scores}')
+
+```
+
+Dessa forma, a lista `ndcg_scores` terá uma tupla para cada query contendo o id da query e o seu respectivo ndcg.
+
+
+***
+
+**Human:**
+Dado o código abaixo:
+
+ndcg_scores = []
+for query_id, query in topics_prep_test.items():
+    print(f"no cálculo da métrica: query_id={query_id}, query['tokens']={query['tokens']}")
+    # Realizando a busca
+    results = bow_searcher.search(query['tokens'], k=5)
+    print(f'no cálculo da métrica: results = {results}')
+
+    # obtém as relevâncias para a query atual
+    dict_relevancia = qrels_test[query_id]
+    print(f'no cálculo da métrica: dict_relevancia = {dict_relevancia}')    
+    relevances = [id_docto for id_docto, relevance in sorted(dict_relevancia.items(), key=lambda x: x[1], reverse=True)]
+    print(f'no cálculo da métrica: relevances = {relevances}')
+
+    # Obtendo o ranking com o id dos documentos retornados
+    ranking = [par_docid_relevance[0] for par_docid_relevance in results]
+    print(f'no cálculo da métrica: ranking = {ranking}')
+
+    # Calculando a métrica ndcg@10
+    ndcg_score = ndcg_at_k(ranking, relevances, dict_relevancia, k=10)
+    print(f'no cálculo da métrica: ndcg_score = {ndcg_score}')
+
+    # Armazenando a métrica para a query atual
+    ndcg_scores.append((query_id, ndcg_score))
+
+
+favor encapsular em uma função calcula_ngdg_at_k que recebe topics_prep_test, qrels_test, searcher e o k como parâmetro
+
+e retorna uma média dos ndcg e ndcg_scores
+
+***
+
+**Assistant:**
+
+Segue abaixo a função `calcula_ndcg_at_k()` que encapsula o código e recebe como parâmetros `topics_prep_test`, `qrels_test`, `searcher` e `k`. A função retorna a média dos ndcg e `ndcg_scores`:
+
+```
+def calcula_ndcg_at_k(topics_prep_test, qrels_test, searcher, k):
+    ndcg_scores = []
+    for query_id, query in topics_prep_test.items():
+        # Realizando a busca
+        results = searcher.search(query['tokens'], k=k)
+
+        # Obtendo as relevâncias para a query atual
+        dict_relevancia = qrels_test[query_id]
+        relevances = [id_docto for id_docto, relevance in sorted(dict_relevancia.items(), key=lambda x: x[1], reverse=True)]
+
+        # Obtendo o ranking com o id dos documentos retornados
+        ranking = [par_docid_relevance[0] for par_docid_relevance in results]
+
+        # Calculando a métrica ndcg@k
+        ndcg_score = ndcg_at_k(ranking, relevances, dict_relevancia, k=k)
+
+        # Armazenando a métrica para a query atual
+        ndcg_scores.append((query_id, ndcg_score))
+
+    # Calculando a média dos ndcg
+    ndcg_mean = sum([score[1] for score in ndcg_scores])/len(ndcg_scores)
+
+    return ndcg_mean, ndcg_scores
+
+```
+
+Para usar a função, basta chamá-la passando os parâmetros necessários, por exemplo:
+
+```
+ndcg_mean, ndcg_scores = calcula_ndcg_at_k(topics_prep_test, qrels_test, bow_searcher, k=10)
+print(f"ndcg_mean: {ndcg_mean}")
+print(f"ndcg_scores: {ndcg_scores}")
+
+```
+
+
+***
+
+**Human:**
+Considerando o código de uma classe em python, é possível ter 2 formas de __init__ diferentes?
+
+***
+
+**Assistant:**
+
+Sim, é possível ter dois métodos `__init__` diferentes em uma mesma classe, desde que eles tenham assinaturas diferentes. A assinatura de um método é definida pelos tipos e quantidade de parâmetros que ele recebe. Se dois métodos tiverem a mesma assinatura, Python entenderá que se tratam do mesmo método e haverá uma sobrescrita.
+
+Por exemplo, você pode ter uma classe com dois métodos `__init__` diferentes assim:
+
+```
+class MinhaClasse:
+    def __init__(self, parametro1):
+        self.parametro1 = parametro1
+        
+    def __init__(self, parametro1, parametro2):
+        self.parametro1 = parametro1
+        self.parametro2 = parametro2
+
+```
+
+Nesse caso, a primeira definição do `__init__` é sobrescrita pela segunda, já que elas têm a mesma assinatura, então ao tentar instanciar a classe com um único parâmetro gerará um erro.
+
+
+***
+
+**Human:**
+Criar um código de uma função que itere sobre os arquivos json driados pela função preprocessa_documentos acima
+(em um path) e concatene esses jsons em um único dict dict_trec2020
+
+***
+
+**Assistant:**
+
+Claro! Segue uma possível implementação para a função solicitada:
+
+```
+import os
+import json
+
+def concatena_jsons(path):
+    dict_trec2020 = {}
+
+    for file_name in os.listdir(path):
+        if file_name.endswith(".json"):
+            file_path = os.path.join(path, file_name)
+            with open(file_path, "r", encoding="utf-8") as f:
+                dict_file = json.load(f)
+                dict_trec2020.update(dict_file)
+    
+    return dict_trec2020
+
+```
+
+Essa função recebe o caminho para o diretório contendo os arquivos JSON criados pela função `preprocessa_documentos`, itera sobre eles e faz a concatenação em um único dicionário `dict_trec2020`. Note que a função assume que todos os arquivos no diretório são arquivos JSON e serão concatenados no dicionário final. Se houver outros arquivos no diretório que não sejam JSONs, a função pode não funcionar corretamente.
+
+
+***
+
+**Human:**
+quero que só considere arquivos se file_name.endswith('_prep.json')
+
+***
+
+**Assistant:**
+
+Para considerar apenas os arquivos que terminam com "_prep.json", basta adicionar uma condição na iteração sobre os arquivos usando a função `endswith()` da classe `str`:
+
+```
+import json
+import os
+
+def concatena_jsons(path):
+    dict_trec2020 = {}
+    for file_name in os.listdir(path):
+        if file_name.endswith('_prep.json'):
+            with open(os.path.join(path, file_name), 'r') as f:
+                dict_trec2020.update(json.load(f))
+    return dict_trec2020
+
+```
+
+Dessa forma, somente os arquivos que atendem a condição `file_name.endswith('_prep.json')` serão considerados na iteração e terão seus dados adicionados ao dicionário `dict_trec2020`.
+
+
+***
+
+**Human:**
+favor comentar linhas e docstring: def concatena_jsons(path):
+    dict_trec2020 = {}
+    for file_name in os.listdir(path):
+        if file_name.endswith('_prep.json'):
+            with open(os.path.join(path, file_name), 'r') as f:
+                dict_trec2020.update(json.load(f))
+    return dict_trec2020
+
+***
+
+**Assistant:**
+
+A função `concatena_jsons` recebe um parâmetro `path`, que representa o caminho onde se encontram os arquivos json a serem concatenados em um único dicionário.
+
+A função itera sobre cada arquivo no diretório especificado pelo `path` usando a função `os.listdir`. Em seguida, verifica se o nome do arquivo termina com `_prep.json` usando a estrutura condicional `if file_name.endswith('_prep.json')`.
+
+Caso o nome do arquivo esteja correto, o arquivo é aberto com a declaração `with open(...)` e o dicionário é atualizado com o método `update()` para incluir o conteúdo do arquivo. Isso é feito para cada arquivo encontrado no diretório.
+
+Por fim, a função retorna o dicionário `dict_trec2020` contendo todos os dados concatenados.
+
+A docstring da função não foi fornecida, mas poderia ser adicionada para fornecer uma descrição mais detalhada do que a função faz e quais são seus parâmetros e retornos.
+
+
+***
+
+**Human:**
+dado um dict, como criar um dict2 só com as 10 primeiras chaves e seus valores?
+
+***
+
+**Assistant:**
+
+
+***
+
+Exported on 4 de março de 2023 10:05 PM.
