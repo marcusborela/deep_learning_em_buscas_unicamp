@@ -6453,4 +6453,516 @@ Esse código deve gerar o arquivo sem aspas. Desculpe novamente pelo erro.
 
 ***
 
-Exported on 14 de março de 2023 9:34 PM.
+**Human:**
+no comando "treina_modelo (model, hparam,  [next(iter(dataloader_train))], [next(iter(dataloader_valid))]) " como faço para passar 2 conjuntos de batch dos dataloaders?
+
+***
+
+**Assistant:**
+
+Para passar dois conjuntos de batches dos dataloaders para a função `treina_modelo`, você pode simplesmente concatená-los usando o operador `+`. Assumindo que `dataloader_train1` e `dataloader_train2` são os dois dataloaders de treinamento e `dataloader_valid1` e `dataloader_valid2` são os dois dataloaders de validação, você pode passá-los para a função `treina_modelo` assim:
+
+```
+treina_modelo(model, hparam, [next(iter(dataloader_train1))] + [next(iter(dataloader_train2))], [next(iter(dataloader_valid1))] + [next(iter(dataloader_valid2))])
+
+```
+
+Isso vai concatenar as listas de batches de treinamento e validação dos dois dataloaders. Note que a função `next(iter(dataloader))` é usada para obter o primeiro batch de cada dataloader, já que a função `treina_modelo` espera receber uma lista de batches.
+
+
+***
+
+**Human:**
+quero do mesmo dataloader
+
+***
+
+**Assistant:**
+
+Para passar dois conjuntos de batch do mesmo dataloader, basta usar o `iter` do dataloader duas vezes seguidas para criar dois iteradores independentes, e então passá-los como argumentos separados para a função `treina_modelo`.
+
+Por exemplo:
+
+```
+batch_train1 = next(iter(dataloader_train))
+batch_train2 = next(iter(dataloader_train))
+batch_valid = next(iter(dataloader_valid))
+
+treina_modelo(model, hparam, [batch_train1, batch_train2], [batch_valid])
+
+```
+
+Isso fará com que a função `treina_modelo` receba como entrada dois conjuntos de batch do mesmo dataloader (`batch_train1` e `batch_train2`) e um conjunto de batch de outro dataloader (`batch_valid`).
+
+
+***
+
+**Human:**
+alguma incorreção aparente no  código que se segue:    def treina_modelo (model, hparam, parm_dataloader_train, parm_dataloader_valid, parm_se_salva_modelo:bool=True, parm_se_gera_rastro:bool=True):
+  global path_treino
+
+  if parm_se_gera_rastro:
+      rastro_neptune = NeptuneRastroRun(hparam, parm_lista_tag= gera_tag_rastro_experiencia_treino(parm_aula='aula2', hparam=hparam) )
+  history = []
+  n_examples = 0
+  time_inicio_treino = time.time()
+
+  try:
+      best_metrica_validacao = 0 # float('-inf')
+      best_epoch = 0
+      
+
+      for epoch in tqdm(range(hparam['num_epochs']), desc='Epochs'):
+        model.train()
+
+        train_losses = []
+        correct = 0
+        for batch in tqdm(parm_dataloader_train, mininterval=0.5, desc='Train', disable=False):
+            hparam['optimizer'].zero_grad()
+            # ipdb.set_trace(context=3)
+            outputs = model(input_ids=batch['input_ids'].to(hparam['device']), attention_mask=batch['attention_mask'].to(hparam['device']), token_type_ids=batch['token_type_ids'].to(hparam['device']), labels=batch['labels'].to(hparam['device']))
+            loss = outputs.loss
+            loss.backward()
+            hparam['optimizer'].step()
+            hparam['scheduler'].step()
+            n_examples += len(batch['input_ids'])  # Increment of batch size
+            train_losses.append(loss.cpu().item())
+
+            preds = outputs.logits.argmax(dim=1)
+            correct += (preds == batch['labels'].to(hparam['device'])).sum().item()    
+
+        if isinstance(parm_dataloader_train,torch.utils.data.dataloader.DataLoader): 
+            accuracy_train = correct / len(parm_dataloader_train.dataset)
+        elif isinstance(parm_dataloader_train,list):  # usado para overfit em um batch
+            accuracy_train = correct / len(parm_dataloader_train[0]['labels'])    
+            assert len(parm_dataloader_train) == 1, f"Calculo de accuracy para overfit em um batch precisa ser revisado"
+
+        loss_train_mean = mean(train_losses)
+
+        accuracy_valid, mean_loss_valid = evaluate(model=model, dataloader=parm_dataloader_valid, set_name='Valid')
+
+        
+        print(f'Epoch: {epoch + 1} Training loss: {loss_train_mean:0.2f} accuracy: {accuracy_train:0.3f} Em validação: loss: {mean_loss_valid:0.3f}; accuracy: {accuracy_valid:0.3f}')
+        metrica_rastro = {"train/loss": loss_train_mean, 
+                          "train/accuracy": accuracy_train, 
+                          "train/n_examples": n_examples, 
+                          "train/learning_rate": hparam["optimizer"].param_groups[0]["lr"],
+                          "valid/loss": mean_loss_valid,
+                          "valid/accuracy": accuracy_valid}  
+        history.append(metrica_rastro)
+        if parm_se_gera_rastro:   
+            rastro_neptune.salva_metrica(metrica_rastro)
+
+
+        if accuracy_valid &gt; best_metrica_validacao:
+            best_model_dict = model.state_dict()
+            best_metrica_validacao = accuracy_valid
+            best_epoch = epoch + 1
+            # print(f'encontrado best model Epoch: {epoch + 1} ')
+        elif hparam['early_stop'] &lt; (epoch + 1 - best_epoch):
+            print(f"Parando por critério de early_stop na época {epoch + 1} sendo best_epoch {best_epoch} e ealy_stop {hparam['early_stop']}")
+            break # for epoch
+
+
+      if parm_se_salva_modelo:
+          model.load_state_dict(best_model_dict)
+          model.to(hparam['device'])
+          path_modelo = f'{path_treino}model_input_layout_{hparam["leiaute_input"]}_len_{hparam["max_seq_length"]}_fim_treino_{time.strftime("[%Y-%b-%d %H:%M:%S]")}.pt'
+          torch.save(model, path_modelo)    
+          print(f"Modelo com melhor resultado em validação (epoch {best_epoch}) salvo após treino em {path_modelo}")
+
+      # calculando tempo gasto e médio por 
+      tempo_treino = time.time() - time_inicio_treino   
+      if parm_se_gera_rastro:
+          rastro_neptune.run_neptune["context/tempo_treino"] = tempo_treino
+          rastro_neptune.run_neptune["context/best_epoch"] = best_epoch
+          rastro_neptune.run_neptune["context/tempo_treino_epoc_mean"] = tempo_treino/hparam['num_epochs']
+          rastro_neptune.gera_grafico_modelo(parm_dataloader_train, model)  
+  finally: # para não deixar em aberto a execução no Neptune
+      if parm_se_gera_rastro:
+          rastro_neptune.stop()
+  return history
+
+***
+
+**Assistant:**
+
+Não há erros aparentes no código que você compartilhou. No entanto, a análise de possíveis erros pode ser limitada sem a informação sobre as definições e importações que você fez anteriormente. Certifique-se de que todas as variáveis e funções usadas no código sejam definidas anteriormente ou importadas corretamente.
+
+
+***
+
+**Human:**
+e nessa: "def evaluate(model, dataloader, set_name):
+    losses = []
+    correct = 0
+    model.eval()
+    with torch.no_grad():
+        for ndx, batch in tqdm(enumerate(dataloader), mininterval=0.5, desc=set_name, disable=False):
+            input_ids = batch['input_ids'].to(hparam['device'])
+            token_type_ids = batch['token_type_ids'].to(hparam['device'])
+            attention_mask = batch['attention_mask'].to(hparam['device'])                                              
+            labels = batch['labels'].to(hparam['device'])                                              
+            outputs = model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids, labels=labels)
+            loss_val = outputs.loss
+            losses.append(loss_val.cpu().item())
+            preds = outputs.logits.argmax(dim=1)
+            correct += (preds == labels).sum().item()
+            # if ndx &lt; 5:
+            #  print(f'Em evaluete. Batch {ndx}')
+            #  print(f'loss_val: {loss_val} ')
+            #  print(f'preds: {preds} \nlabels: {labels} ')
+            #  print(f'correct: {correct}')
+    # ipdb.set_trace(context=3)
+    if isinstance(dataloader,torch.utils.data.dataloader.DataLoader): 
+        accuracy = correct / len(dataloader.dataset)
+    elif isinstance(dataloader,list):  # usado para overfit em um batch
+        accuracy = correct / len(dataloader[0]['labels'])
+        assert len(dataloader) == 1, f"Calculo de accuracy para overfit em um batch precisa ser revisado"
+    mean_loss = mean(losses)
+    return accuracy, mean_loss"
+
+***
+
+**Assistant:**
+
+Essa função `evaluate` é responsável por avaliar o desempenho do modelo em um conjunto de dados de teste ou validação. A função recebe como entrada o modelo a ser avaliado, um dataloader contendo os dados de teste ou validação e um parâmetro `set_name` para identificar o conjunto de dados que está sendo avaliado.
+
+A função começa definindo duas variáveis: `losses` e `correct`. A variável `losses` será usada para armazenar os valores das funções de perda calculadas para cada lote de dados no conjunto de teste ou validação. A variável `correct` será usada para contar o número de classificações corretas feitas pelo modelo.
+
+Em seguida, o modelo é colocado no modo de avaliação usando `model.eval()` e o bloco `with torch.no_grad():` é usado para desativar o cálculo do gradiente, o que economiza memória e acelera a execução da função.
+
+A função `tqdm` é usada para mostrar uma barra de progresso durante a avaliação dos dados. Para cada lote de dados no dataloader, a função extrai as entradas do lote, envia essas entradas para o dispositivo especificado nos parâmetros `hparam`, calcula as saídas do modelo para o lote de entrada usando `model()`, e extrai o valor da função de perda das saídas do modelo. A função de perda é armazenada em `loss_val` e adicionada à lista `losses`.
+
+A função então usa as saídas do modelo para calcular as previsões do modelo para o lote de entrada usando `outputs.logits.argmax(dim=1)` e compara as previsões do modelo com as etiquetas verdadeiras do lote usando `(preds == labels).sum().item()`. O número de classificações corretas é adicionado à variável `correct`.
+
+Finalmente, a função calcula a acurácia e a perda média do modelo para todo o conjunto de teste ou validação. Se o dataloader fornecido é do tipo `DataLoader`, a função calcula a acurácia como o número de classificações corretas dividido pelo tamanho do conjunto de teste ou validação. Se o dataloader fornecido é do tipo `list`, a função assume que é um lote de dados usado para overfit e calcula a acurácia como o número de classificações corretas dividido pelo tamanho do lote de entrada. A função retorna a acurácia e a perda média.
+
+
+***
+
+**Human:**
+algum erro aparente?
+
+***
+
+**Assistant:**
+
+Não identifiquei nenhum erro aparente na função `train()`. Parece estar definida corretamente e seguindo uma estrutura comum de treinamento de modelos com PyTorch. Claro que é necessário verificar se todas as variáveis e parâmetros estão definidos corretamente, mas isso não é possível avaliar sem o contexto completo do código.
+
+
+***
+
+**Human:**
+e na função evaluate?
+
+***
+
+**Assistant:**
+
+Não há erros aparentes na função `evaluate`, mas há algumas coisas que podem ser melhoradas:
+
+1. 
+A função utiliza uma variável `hparam` que não é definida dentro da função, o que sugere que ela está definida em outro lugar do código. Isso pode tornar a função menos modular e mais difícil de ser mantida no futuro. É recomendável que as variáveis necessárias sejam passadas como argumentos da função.
+
+2. 
+A função utiliza a biblioteca `tqdm` para exibir uma barra de progresso durante a iteração do dataloader. No entanto, ela utiliza a opção `disable=False`, o que faz com que a barra de progresso seja sempre exibida, mesmo que não seja desejável. É recomendável que essa opção seja controlada por uma variável externa, de forma que o usuário possa escolher quando exibir ou não a barra de progresso.
+
+3. 
+A função utiliza a biblioteca `ipdb` para inserir pontos de depuração no código. Embora isso possa ser útil em alguns casos, é recomendável que a função não inclua esse tipo de código, a menos que seja estritamente necessário para depuração.
+
+4. 
+A função assume que o dataloader é sempre uma instância da classe `torch.utils.data.dataloader.DataLoader`, o que pode não ser verdadeiro em todos os casos. É recomendável que a função verifique se o dataloader é realmente uma instância dessa classe antes de calcular a acurácia.
+
+
+
+
+***
+
+**Human:**
+como retornar a coluna contents da linha de um df procurando na coluna id o valor 1212
+
+***
+
+**Assistant:**
+
+Para retornar a coluna `contents` da linha de um Pandas DataFrame onde a coluna `id` possui o valor 1212, você pode utilizar a seguinte linha de código:
+
+```
+df.loc[df['id'] == 1212, 'contents'].values[0]
+
+```
+
+Explicando a linha de código acima:
+
+- `df.loc[df['id'] == 1212, 'contents']` seleciona todas as linhas do DataFrame `df` onde a coluna `id` é igual a 1212 e a coluna `contents` é selecionada.
+- `.values` retorna os valores da coluna `contents` como um array NumPy.
+- `[0]` retorna o primeiro elemento do array, que corresponde ao valor da coluna `contents` da primeira linha que atende à condição `df['id'] == 1212`.
+
+
+Caso nenhum registro seja encontrado com o valor 1212 na coluna `id`, essa linha de código irá gerar um erro `IndexError`. Para evitar isso, você pode verificar se o array retornado pela expressão `df.loc[df['id'] == 1212, 'contents'].values` está vazio antes de tentar acessar o primeiro elemento. Uma forma de fazer isso é utilizar a função `len()` para verificar o comprimento do array. Por exemplo:
+
+```
+contents = df.loc[df['id'] == 1212, 'contents'].values
+if len(contents) > 0:
+    print(contents[0])
+else:
+    print('Nenhum registro encontrado com id = 1212')
+
+```
+
+
+***
+
+**Human:**
+
+qrels é um dict.
+suas chaves são id_query
+o valor de cada id_query é um dict cujas chaves são id_documento e valor o valor da relevância do documento para id_query.
+
+exemplo de qrels.
+
+{
+1043135: {1149109: '0',
+  1149115: '1',
+  127925: '1'}
+ }
+
+df_estagio1 tem as seguintes colunas:
+['id_query', 'id_documento', 'ranking', 'score', 'texto_query', 'texto_documento', 'score_reranking']
+
+preciso criar uma coluna nova val_relevancia em df_estagio1 para conter 0, se o par id_query e id_documento não houver em qrels.
+E se o par houver em qrels, trazer o valor da relevância.
+
+***
+
+**Assistant:**
+
+Você pode usar a função `apply` do pandas juntamente com uma função lambda para aplicar a lógica desejada na criação da nova coluna. Aqui está um exemplo de como fazer isso:
+
+```
+df_estagio1['val_relevancia'] = df_estagio1.apply(lambda x: qrels[str(x['id_query'])][str(x['id_documento'])] if str(x['id_query']) in qrels and str(x['id_documento']) in qrels[str(x['id_query'])] else '0', axis=1)
+
+```
+
+Essa função lambda verifica se o par `id_query` e `id_documento` existe em `qrels`. Se existir, o valor da relevância é retornado. Caso contrário, é retornado '0'. O resultado é atribuído à coluna `val_relevancia` em `df_estagio1`.
+
+
+***
+
+**Human:**
+não precisa de aplicar str em x['id_query'] .
+
+***
+
+**Assistant:**
+
+Você tem razão, a conversão para string não é necessária nesse caso, já que os valores da coluna `id_query` já são do tipo inteiro. Agradeço pela correção!
+
+
+***
+
+**Human:**
+gera então o código corrigido
+
+***
+
+**Assistant:**
+
+Segue o código corrigido:
+
+```
+val_relevancia = []
+for i, row in df_estagio1.iterrows():
+    id_query = row['id_query']
+    id_documento = row['id_documento']
+    if id_query in qrels and id_documento in qrels[id_query]:
+        val_relevancia.append(qrels[id_query][id_documento])
+    else:
+        val_relevancia.append('0')
+df_estagio1['val_relevancia'] = val_relevancia
+
+```
+
+
+***
+
+**Human:**
+AttributeError: 'BertEncoder' object has no attribute 'gradient_checkpointing'
+
+***
+
+**Assistant:**
+
+O erro "AttributeError: 'BertEncoder' object has no attribute 'gradient_checkpointing'" geralmente ocorre quando você está tentando utilizar a função de checkpointing de gradiente do PyTorch em um modelo que não suporta essa funcionalidade.
+
+A função de checkpointing de gradiente permite economizar memória ao calcular os gradientes apenas para um subconjunto de parâmetros em um modelo grande, em vez de calcular gradientes para todos os parâmetros ao mesmo tempo. No entanto, nem todos os modelos do PyTorch suportam essa funcionalidade.
+
+Para resolver esse erro, você pode tentar uma das seguintes soluções:
+
+1. 
+Verifique se você está usando a versão mais recente do PyTorch que suporta a funcionalidade de checkpointing de gradiente.
+
+2. 
+Verifique se o modelo que você está usando suporta a funcionalidade de checkpointing de gradiente.
+
+3. 
+Remova a linha de código que chama a função de checkpointing de gradiente.
+
+
+
+Sem ver o código específico que você está executando, é difícil determinar a solução exata para o seu problema. Mas espero que essas dicas ajudem a resolver o erro!
+
+
+***
+
+**Human:**
+Considere a função
+
+def calcula_relevancia(parm_model, parm_dataloader_reranking):
+  prob_relevancia = []
+  parm_model.eval()
+  # classes_dummy = torch.zeros(hparam['batch_size'], dtype=torch.int64).to(hparam['device'])
+  with torch.no_grad():
+      for ndx, batch in tqdm(enumerate(parm_dataloader_reranking), total=len(parm_dataloader_reranking), mininterval=0.5, desc='dataset_reranking', disable=False):
+          print("\nbatch['input_ids'][0]", batch['input_ids'][0])
+          print("batch['input_ids'][1]", batch['input_ids'][1])
+          outputs = parm_model(input_ids=batch['input_ids'].to(hparam['device']), 
+                          attention_mask=batch['token_type_ids'].to(hparam['device']), 
+                          token_type_ids=batch['attention_mask'].to(hparam['device']),
+                          labels= batch['labels'].to(hparam['device']))
+          probs = torch.nn.functional.softmax(outputs.logits, dim=1)
+          nao_relevante, relevante = zip(*probs)
+          relevantes_float = [float(t.cpu()) for t in relevante]
+          prob_relevancia.extend(relevantes_float)
+          print('outpus', outputs)
+          print('probs',probs)
+          print('prob_relevancia',prob_relevancia)
+          break
+
+Ai chamar:
+	prob_relevancia_qp = calcula_relevancia(model,dataloader_reranking)
+	
+Dá erro:
+	AttributeError: 'BertEncoder' object has no attribute 'gradient_checkpointing'
+
+***
+
+**Assistant:**
+
+O erro "AttributeError: 'BertEncoder' object has no attribute 'gradient_checkpointing'" geralmente ocorre quando a versão do PyTorch é anterior à 1.6.0, pois o recurso gradient_checkpointing foi introduzido na versão 1.6.0. Uma solução para esse erro é atualizar o PyTorch para uma versão mais recente, como 1.6.0 ou posterior. Caso não seja possível atualizar o PyTorch, pode-se tentar ajustar o código para não usar o recurso gradient_checkpointing.
+
+
+***
+
+**Human:**
+como ajusto a função calcula_relevancia para não usar o gradient_checkpointing?
+
+***
+
+**Assistant:**
+
+Para ajustar a função `calcula_relevancia` e remover o uso de `gradient_checkpointing`, você pode simplesmente remover o argumento `gradient_checkpointing` da função `BertForSequenceClassification` ao inicializar o modelo `parm_model`, e também remover o argumento `labels` na chamada da função `parm_model`.
+
+Isso ficaria da seguinte forma:
+
+```
+def calcula_relevancia(parm_model, parm_dataloader_reranking):
+    prob_relevancia = []
+    parm_model.eval()
+    with torch.no_grad():
+        for ndx, batch in tqdm(enumerate(parm_dataloader_reranking), total=len(parm_dataloader_reranking), mininterval=0.5, desc='dataset_reranking', disable=False):
+            outputs = parm_model(input_ids=batch['input_ids'].to(hparam['device']),
+                                 attention_mask=batch['token_type_ids'].to(hparam['device']),
+                                 token_type_ids=batch['attention_mask'].to(hparam['device']))
+            probs = torch.nn.functional.softmax(outputs.logits, dim=1)
+            nao_relevante, relevante = zip(*probs)
+            relevantes_float = [float(t.cpu()) for t in relevante]
+            prob_relevancia.extend(relevantes_float)
+            print('outputs', outputs)
+            print('probs', probs)
+            print('prob_relevancia', prob_relevancia)
+            break
+
+model = transformers.BertForSequenceClassification.from_pretrained(hparam['model_name'], num_labels=2)
+prob_relevancia_qp = calcula_relevancia(model,dataloader_reranking)
+
+```
+
+Com isso, você deve conseguir rodar a função `calcula_relevancia` sem erros devido ao `gradient_checkpointing`.
+
+
+***
+
+**Human:**
+qual diferença entre
+model.save_pretrained()
+e torch.save(model)
+
+***
+
+**Assistant:**
+
+A diferença entre `model.save_pretrained()` e `torch.save(model)` é que `model.save_pretrained()` salva os pesos do modelo, bem como todos os outros artefatos necessários para carregar e inicializar o modelo em uma instância específica de um modelo do Transformers, enquanto `torch.save(model)` salva apenas os pesos do modelo.
+
+O método `save_pretrained()` é específico do Transformers e salva o modelo em um formato que pode ser diretamente carregado usando a classe correspondente do Transformers. É útil para salvar modelos pré-treinados, bem como modelos finos ajustados aos seus próprios dados.
+
+O método `torch.save(model)` é mais geral e salva o modelo em um formato PyTorch padrão. Pode ser útil se você quiser salvar o modelo para carregá-lo em um script PyTorch não relacionado ao Transformers. No entanto, ao carregar o modelo usando `torch.load()`, você precisará criar e inicializar manualmente a instância do modelo.
+
+
+***
+
+**Human:**
+como faria para inicializar como AutoModelForSequenceClassification?
+
+***
+
+**Assistant:**
+
+Para inicializar um modelo como `AutoModelForSequenceClassification` você pode usar a função `AutoModelForSequenceClassification.from_pretrained()` do pacote Transformers.
+
+Aqui está um exemplo:
+
+```
+from transformers import AutoModelForSequenceClassification
+
+model_name = 'bert-base-uncased'
+num_labels = 2 # número de classes
+
+model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=num_labels)
+
+```
+
+Neste exemplo, estamos inicializando um modelo BERT pré-treinado baseado em texto não-case-sensitive ("bert-base-uncased") com duas classes (num_labels=2) para classificação de sequência.
+
+
+***
+
+**Human:**
+Quero inicilizar um AutoModelForSequenceClassification para model após dar um load nele com o comando: 
+model = torch.load()
+
+***
+
+**Assistant:**
+
+Se você salvou o modelo usando `torch.save()`, você pode carregá-lo usando `torch.load()` e, em seguida, inicializá-lo como um `AutoModelForSequenceClassification`. Você pode fazer isso da seguinte maneira:
+
+```
+import torch
+from transformers import AutoModelForSequenceClassification
+
+# carrega o modelo salvo
+model = torch.load('caminho/do/seu/modelo.pt')
+
+# inicializa o modelo como AutoModelForSequenceClassification
+model = AutoModelForSequenceClassification.from_pretrained('nome_do_modelo', state_dict=model.state_dict())
+
+```
+
+Observe que é necessário especificar o nome do modelo que foi salvo para inicializá-lo corretamente.
+
+
+***
+
+Exported on 15 de março de 2023 10:38 PM.
