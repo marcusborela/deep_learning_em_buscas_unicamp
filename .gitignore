@@ -10,3 +10,4 @@ pylint-report.txt
 local/*
 temp.properties
 modelo/*
+*.neptune*
