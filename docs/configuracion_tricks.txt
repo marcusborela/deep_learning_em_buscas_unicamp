@@ -12,5 +12,14 @@
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org scikit-learn
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org sentencepiece
 
+trectools
 
-neptune-client
+-U "neptune-client<1.0"
+pyserini
+conda install faiss-cpu -c pytorch
+
+
+
+
+export JVM_PATH=/usr/lib/jvm/java-11-openjdk-amd64/lib/server/libjvm.so
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
