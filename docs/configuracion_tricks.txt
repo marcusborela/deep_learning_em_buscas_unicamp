@@ -11,3 +11,6 @@
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ftfy
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org scikit-learn
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org sentencepiece
+
+
+neptune-client
