@@ -1,0 +1,13 @@
+ conda create -n treinapython39  python=3.9.16
+ conda activate treinapython39
+ python --version
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org transformers
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org sacrebleu
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org datasets
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org evaluate
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ipykernel
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org torch -f https://download.pytorch.org/whl/cu111/torch_stable.html
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ipdb
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ftfy
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org scikit-learn
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org sentencepiece
