@@ -17,7 +17,7 @@ trectools
 -U "neptune-client<1.0"
 pyserini
 conda install faiss-cpu -c pytorch
-
+nbconvert
 
 
 export JVM_PATH=/usr/lib/jvm/java-11-openjdk-amd64/lib/server/libjvm.so
