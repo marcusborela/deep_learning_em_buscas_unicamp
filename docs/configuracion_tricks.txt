@@ -13,11 +13,10 @@
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org sentencepiece
 
 trectools
-
+-U sentence-transformers
 -U "neptune-client<1.0"
 pyserini
 conda install faiss-cpu -c pytorch
-
 
 
 
