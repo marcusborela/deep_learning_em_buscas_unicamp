@@ -1,3 +1,5 @@
+ Configuration
+
  conda create -n treinapython39  python=3.9.16
  conda activate treinapython39
  python --version
@@ -22,3 +24,11 @@ nbconvert
 
 export JVM_PATH=/usr/lib/jvm/java-11-openjdk-amd64/lib/server/libjvm.so
 export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+
+
+Other tricks
+
+Para converter ipynb para py
+    jupyter nbconvert --to script fine_tuning_dpr.ipynb
+    marcar salto de linha  (e dar ctrl-shit-l)
+    marcar # In[ e fazer o mesmo
