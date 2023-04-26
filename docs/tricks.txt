@@ -12,14 +12,26 @@
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ipdb
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ftfy
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org scikit-learn
- pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org sentencepiece
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org farm-haystack
+
+sentencepiece
 seaborn
 trectools
+
 -U sentence-transformers
 -U "neptune-client<1.0"
 pyserini
 conda install faiss-cpu -c pytorch
 nbconvert
+
+
+Tentando haytack
+
+git clone https://github.com/deepset-ai/haystack.git
+cd haystack
+pip install --upgrade pip
+pip install -e '.[all]' ## or 'all-gpu' for the GPU-enabled dependencies
+
 
 
 export JVM_PATH=/usr/lib/jvm/java-11-openjdk-amd64/lib/server/libjvm.so
