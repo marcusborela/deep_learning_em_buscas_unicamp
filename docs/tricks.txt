@@ -13,7 +13,7 @@
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ftfy
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org scikit-learn
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org sentencepiece
-
+seaborn
 trectools
 -U sentence-transformers
 -U "neptune-client<1.0"
