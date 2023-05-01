@@ -12,11 +12,13 @@
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ipdb
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org ftfy
  pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org scikit-learn
- pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org farm-haystack
+ pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org openai
+ accelerate
 
 sentencepiece
 seaborn
 trectools
+
 
 -U sentence-transformers
 -U "neptune-client<1.0"
@@ -24,6 +26,8 @@ pyserini
 conda install faiss-cpu -c pytorch
 nbconvert
 
+
+ não deu certo: farm-haystack
 
 Tentando haytack
 
